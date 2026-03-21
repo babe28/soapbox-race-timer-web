@@ -72,6 +72,7 @@ function getLanguagePack(language, practiceOnly) {
       name: isJa ? '\u9078\u624b\u540d' : 'Name',
       kana: isJa ? '\u304b\u306a' : 'Kana',
       car: isJa ? '\u8eca\u756a' : 'Car',
+      memo: isJa ? '\u30e1\u30e2' : 'Memo',
       practice: isJa ? '\u7df4\u7fd2' : 'Practice',
       r1Split: isJa ? 'R1\u4e2d\u9593' : 'R1-Sec',
       r1Goal: isJa ? 'R1\u30b4\u30fc\u30eb' : 'R1-Goal',
@@ -134,6 +135,7 @@ function getDisplayCurrent(db) {
       e.name,
       e.kana,
       e.car_no,
+      e.memo,
       MIN(r.goal_ms) AS best_goal_ms,
       ROW_NUMBER() OVER (ORDER BY MIN(r.goal_ms) ASC, e.effective_order ASC, e.bib_no ASC) AS rank_no
     FROM entries e
@@ -141,7 +143,7 @@ function getDisplayCurrent(db) {
     WHERE r.run_type = 'practice'
       AND r.status = 'finished'
       AND r.goal_ms IS NOT NULL
-    GROUP BY e.id, e.bib_no, e.name, e.kana, e.car_no, e.effective_order
+    GROUP BY e.id, e.bib_no, e.name, e.kana, e.car_no, e.memo, e.effective_order
     ORDER BY best_goal_ms ASC, e.effective_order ASC, e.bib_no ASC
   ` : `
     SELECT
@@ -150,6 +152,7 @@ function getDisplayCurrent(db) {
       e.name,
       e.kana,
       e.car_no,
+      e.memo,
       MIN(r.goal_ms) AS best_goal_ms,
       ROW_NUMBER() OVER (ORDER BY MIN(r.goal_ms) ASC, e.effective_order ASC, e.bib_no ASC) AS rank_no
     FROM entries e
@@ -157,12 +160,12 @@ function getDisplayCurrent(db) {
     WHERE r.valid_for_ranking = 1
       AND r.status = 'finished'
       AND r.goal_ms IS NOT NULL
-    GROUP BY e.id, e.bib_no, e.name, e.kana, e.car_no, e.effective_order
+    GROUP BY e.id, e.bib_no, e.name, e.kana, e.car_no, e.memo, e.effective_order
     ORDER BY best_goal_ms ASC, e.effective_order ASC, e.bib_no ASC
   `).all();
 
   const unrunRows = db.prepare(practiceOnly ? `
-    SELECT e.id, e.bib_no, e.name, e.kana, e.car_no, e.effective_order
+    SELECT e.id, e.bib_no, e.name, e.kana, e.car_no, e.memo, e.effective_order
     FROM entries e
     WHERE e.id NOT IN (
       SELECT DISTINCT entry_id
@@ -173,7 +176,7 @@ function getDisplayCurrent(db) {
     )
     ORDER BY e.effective_order ASC, e.bib_no ASC
   ` : `
-    SELECT e.id, e.bib_no, e.name, e.kana, e.car_no, e.effective_order
+    SELECT e.id, e.bib_no, e.name, e.kana, e.car_no, e.memo, e.effective_order
     FROM entries e
     WHERE e.id NOT IN (
       SELECT DISTINCT entry_id
@@ -209,6 +212,7 @@ function getDisplayCurrent(db) {
       name: row.name,
       kana: row.kana,
       carNo: row.car_no,
+      memo: row.memo,
       practice: (settings.showPractice || practiceOnly) ? formatMs(practice?.goal_ms) : null,
       r1: {
         split: settings.showSplit ? formatMs(r1?.split_ms) : null,

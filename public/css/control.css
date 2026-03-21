@@ -78,11 +78,27 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.run-type-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.run-type-buttons button.active {
+  background: var(--accent);
+  color: #061220;
+  border-color: var(--accent);
+}
 .full-width {
   grid-column: 1 / -1;
 }
 .action-row {
   margin-top: 14px;
+}
+.time-input {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 16px 18px;
 }
 .compact .info-item strong {
   font-size: 18px;
@@ -90,6 +106,57 @@
 .mini-table .table-btn {
   padding: 5px 8px;
   font-size: 12px;
+}
+.mini-table .table-btn.danger {
+  background: rgba(255, 106, 125, 0.18);
+  border-color: rgba(255, 106, 125, 0.5);
+  color: #ffd8df;
+}
+.queue-action {
+  font-weight: 700;
+}
+.queue-action-primary {
+  background: linear-gradient(180deg, #5ca9ff 0%, #3f8dec 100%);
+  color: #061220;
+  border-color: #5ca9ff;
+}
+.queue-action-now {
+  background: rgba(88, 214, 141, 0.18);
+  border-color: rgba(88, 214, 141, 0.45);
+}
+.queue-action-next {
+  background: rgba(92, 169, 255, 0.16);
+  border-color: rgba(92, 169, 255, 0.45);
+}
+.queue-action-warn {
+  background: rgba(255, 207, 90, 0.18);
+  border-color: rgba(255, 207, 90, 0.48);
+}
+.queue-action-ok {
+  background: rgba(125, 232, 170, 0.14);
+  border-color: rgba(125, 232, 170, 0.4);
+}
+.queue-action-clear {
+  background: rgba(159, 176, 211, 0.12);
+  border-color: rgba(159, 176, 211, 0.35);
+}
+.queue-list-compact {
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 6px;
+}
+.queue-list-compact li {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.queue-list-compact li strong {
+  font-size: 14px;
+}
+.queue-list li.active {
+  outline: 2px solid var(--accent);
+}
+.queue-list li.skipped {
+  opacity: 0.45;
 }
 @media (max-width: 1400px) {
   .control-grid {

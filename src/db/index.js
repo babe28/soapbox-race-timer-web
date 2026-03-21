@@ -24,6 +24,13 @@ function initDb(db) {
     if (!heatColumns.some((column) => column.name === 'code')) {
       db.exec('ALTER TABLE heats ADD COLUMN code TEXT');
     }
+    const settingsColumns = db.prepare('PRAGMA table_info(settings)').all();
+    if (!settingsColumns.some((column) => column.name === 'show_memo')) {
+      db.exec('ALTER TABLE settings ADD COLUMN show_memo INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!settingsColumns.some((column) => column.name === 'memo_title')) {
+      db.exec("ALTER TABLE settings ADD COLUMN memo_title TEXT NOT NULL DEFAULT 'Memo'");
+    }
   });
   applySchema();
 }

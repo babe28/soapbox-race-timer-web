@@ -1,22 +1,23 @@
 let controlState = null;
 let selectedEntry = null;
 let pollTimer = null;
+let pollRequestId = 0;
+let currentPollController = null;
+let preferredSelectedEntryId = null;
 
 const fmt = window.SoapboxCommon?.formatMs || ((v) => String(v ?? '-'));
+const RUN_TYPE_STORAGE_KEY = 'soapbox:lastRunType';
 
 document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
+  restoreRunType();
   loadControlState();
-
-  if (!pollTimer) {
-    pollTimer = setInterval(loadControlState, 1000);
-  }
 });
 
 function bindEvents() {
   document.getElementById('saveBtn')?.addEventListener('click', saveRun);
   document.getElementById('saveNextBtn')?.addEventListener('click', saveAndNext);
-  document.getElementById('resetBtn')?.addEventListener('click', clearRunForm);
+  document.getElementById('resetBtn')?.addEventListener('click', () => clearRunForm(false));
 
   document.getElementById('nowCard')?.addEventListener('click', () => {
     if (controlState?.nowRunningEntry) setSelectedEntry(controlState.nowRunningEntry);
@@ -28,7 +29,8 @@ function bindEvents() {
 
   document.getElementById('moveNextBtn')?.addEventListener('click', async () => {
     await postJson('/api/control/action/move-next', {});
-    await loadControlState();
+    const data = await loadControlState(controlState?.nowRunningEntry?.id ?? null);
+    if (data?.nowRunningEntry) setSelectedEntry(data.nowRunningEntry);
   });
 
   document.getElementById('clearNowBtn')?.addEventListener('click', async () => {
@@ -39,13 +41,13 @@ function bindEvents() {
   document.getElementById('setNowBtn')?.addEventListener('click', async () => {
     if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/set-now', { entryId: selectedEntry.id });
-    await loadControlState();
+    await loadControlState(selectedEntry.id);
   });
 
   document.getElementById('setNextBtn')?.addEventListener('click', async () => {
     if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/set-next', { entryId: selectedEntry.id });
-    await loadControlState();
+    await loadControlState(selectedEntry.id);
   });
 
   document.getElementById('skipNextBtn')?.addEventListener('click', async () => {
@@ -58,13 +60,19 @@ function bindEvents() {
   document.getElementById('unskipBtn')?.addEventListener('click', async () => {
     if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/unskip', { entryId: selectedEntry.id });
-    await loadControlState();
+    await loadControlState(selectedEntry.id);
   });
 
   document.querySelectorAll('[data-status]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       await postJson('/api/control/action/status', { status: btn.dataset.status });
       await loadControlState();
+    });
+  });
+
+  document.querySelectorAll('[data-run-type]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setRunType(btn.dataset.runType);
     });
   });
 
@@ -85,16 +93,25 @@ async function postJson(url, body) {
   return res.json().catch(() => ({}));
 }
 
-async function loadControlState() {
+async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
+  const requestId = ++pollRequestId;
+  currentPollController?.abort();
+  currentPollController = new AbortController();
+
   try {
-    const res = await fetch('/api/control/state', { cache: 'no-store' });
+    const res = await fetch('/api/control/state', {
+      cache: 'no-store',
+      signal: currentPollController.signal,
+    });
     const data = await res.json();
+    if (requestId !== pollRequestId) return controlState;
+
     controlState = data;
     render(data);
 
-    const currentSelectedId = selectedEntry?.id;
-    const queueSelected = currentSelectedId
-      ? data.queue?.find((q) => q.id === currentSelectedId)
+    const selectedId = nextPreferredId ?? selectedEntry?.id ?? null;
+    const queueSelected = selectedId
+      ? data.queue?.find((q) => q.id === selectedId)
       : null;
 
     if (queueSelected) {
@@ -104,8 +121,17 @@ async function loadControlState() {
     } else {
       clearSelectedEntry();
     }
+
+    preferredSelectedEntryId = selectedEntry?.id ?? null;
   } catch (err) {
-    console.error(err);
+    if (err.name !== 'AbortError') {
+      console.error(err);
+    }
+  } finally {
+    if (requestId === pollRequestId) {
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(() => loadControlState(), 1000);
+    }
   }
   return controlState;
 }
@@ -130,14 +156,12 @@ function render(data) {
   document.querySelectorAll('[data-status]').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.status === data.status);
   });
-
-  renderHistory(data.selectedEntryRuns || []);
-  renderQueueList();
 }
 
 function setSelectedEntry(entry, fillForm = true) {
   if (!entry) return;
 
+  preferredSelectedEntryId = entry.id;
   selectedEntry = entry;
   document.getElementById('selName').textContent = entry.name ?? '-';
   document.getElementById('selBib').textContent = `No.${entry.bibNo ?? '-'}`;
@@ -176,6 +200,7 @@ async function loadEntryHistory(entryId) {
 
 function clearSelectedEntry() {
   selectedEntry = null;
+  preferredSelectedEntryId = null;
   document.getElementById('selName').textContent = '-';
   document.getElementById('selBib').textContent = 'No.-';
   document.getElementById('selKana').textContent = '-';
@@ -203,7 +228,7 @@ function renderHistory(runs) {
       <td>${escapeHtml(fmt(run.split_ms))}</td>
       <td>${escapeHtml(fmt(run.goal_ms))}</td>
       <td>${escapeHtml(String(run.status || '-').toUpperCase())}</td>
-      <td><button type="button" class="table-btn warn" data-action="delete-run">Delete</button></td>
+      <td><button type="button" class="table-btn danger" data-action="delete-run">Delete</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -227,7 +252,7 @@ async function onHistoryClick(event) {
       alert(json.error || 'Failed to delete run');
       return;
     }
-    await loadControlState();
+    await loadControlState(selectedEntry?.id ?? null);
   } catch (err) {
     console.error(err);
     alert('Failed to delete run');
@@ -268,7 +293,7 @@ async function saveRun() {
     return false;
   }
 
-  const runType = document.getElementById('runType')?.value || 'race1';
+  const runType = getRunType();
   const splitResult = parseTimeInput(document.getElementById('splitTime')?.value ?? '', 'Split Time');
   if (splitResult.error) {
     alert(splitResult.error);
@@ -311,30 +336,38 @@ async function saveRun() {
     return false;
   }
 
-  await loadControlState();
+  setRunType(runType);
+  await loadControlState(selectedEntry.id);
   return true;
 }
 
 async function saveAndNext() {
+  const currentEntryId = selectedEntry?.id ?? null;
   const ok = await saveRun();
   if (!ok) return;
+
+  if (currentEntryId) {
+    await postJson('/api/control/action/set-now', { entryId: currentEntryId });
+  }
   await postJson('/api/control/action/move-next', {});
-  clearRunForm();
-  const data = await loadControlState();
-  if (data?.nextEntry) {
-    setSelectedEntry(data.nextEntry);
-  } else if (data?.nowRunningEntry) {
-    setSelectedEntry(data.nowRunningEntry);
+  clearRunForm(false);
+  const data = await loadControlState(null);
+  const nextTarget = data?.nowRunningEntry?.id && data.nowRunningEntry.id !== currentEntryId
+    ? data.nowRunningEntry
+    : data?.nextEntry || data?.nowRunningEntry || null;
+  if (nextTarget) {
+    setSelectedEntry(nextTarget);
   }
 }
 
-function clearRunForm() {
+function clearRunForm(resetRunType = false) {
   ['splitTime', 'goalTime', 'runNote'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   const status = document.getElementById('runStatus');
   if (status) status.value = 'finished';
+  if (resetRunType) setRunType('race1');
 }
 
 function parseTimeInput(value, label) {
@@ -365,6 +398,34 @@ function normalizeEmpty(value) {
 
 function labelRunType(value) {
   return ({ practice: 'Practice', race1: 'Race1', race2: 'Race2', rerun: 'Rerun' })[value] || value || '-';
+}
+
+function setRunType(value) {
+  const nextValue = ({ practice: true, race1: true, race2: true, rerun: true })[value] ? value : 'race1';
+  document.querySelectorAll('[data-run-type]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.runType === nextValue);
+  });
+  const hidden = document.getElementById('runType');
+  if (hidden) hidden.value = nextValue;
+  try {
+    localStorage.setItem(RUN_TYPE_STORAGE_KEY, nextValue);
+  } catch (_err) {
+    // ignore storage failures
+  }
+}
+
+function getRunType() {
+  return document.getElementById('runType')?.value || 'race1';
+}
+
+function restoreRunType() {
+  let stored = 'race1';
+  try {
+    stored = localStorage.getItem(RUN_TYPE_STORAGE_KEY) || 'race1';
+  } catch (_err) {
+    stored = 'race1';
+  }
+  setRunType(stored);
 }
 
 function escapeHtml(value) {

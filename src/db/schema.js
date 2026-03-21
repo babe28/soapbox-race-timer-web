@@ -11,11 +11,13 @@ const schemaStatements = [
       show_kana INTEGER NOT NULL DEFAULT 1,
       show_car_no INTEGER NOT NULL DEFAULT 1,
       show_practice INTEGER NOT NULL DEFAULT 1,
+      show_memo INTEGER NOT NULL DEFAULT 0,
       show_split INTEGER NOT NULL DEFAULT 1,
       show_clock INTEGER NOT NULL DEFAULT 1,
       show_last_update INTEGER NOT NULL DEFAULT 1,
       show_overall_best INTEGER NOT NULL DEFAULT 1,
       show_effects INTEGER NOT NULL DEFAULT 1,
+      memo_title TEXT NOT NULL DEFAULT 'Memo',
       auto_backup_interval_min INTEGER NOT NULL DEFAULT 5,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP

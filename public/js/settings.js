@@ -15,11 +15,13 @@ function bindSettingsElements() {
   settingsEls.showKana = document.getElementById('showKana');
   settingsEls.showCarNo = document.getElementById('showCarNo');
   settingsEls.showPractice = document.getElementById('showPractice');
+  settingsEls.showMemo = document.getElementById('showMemo');
   settingsEls.showSplit = document.getElementById('showSplit');
   settingsEls.showClock = document.getElementById('showClock');
   settingsEls.showLastUpdate = document.getElementById('showLastUpdate');
   settingsEls.showOverallBest = document.getElementById('showOverallBest');
   settingsEls.showEffects = document.getElementById('showEffects');
+  settingsEls.memoTitle = document.getElementById('memoTitle');
   settingsEls.currentSettings = document.getElementById('currentSettings');
   settingsEls.reloadSettingsBtn = document.getElementById('reloadSettingsBtn');
   settingsEls.resetDbBtn = document.getElementById('resetDbBtn');
@@ -57,11 +59,13 @@ function applySettingsToForm(data) {
   settingsEls.showKana.checked = Boolean(data.showKana);
   settingsEls.showCarNo.checked = Boolean(data.showCarNo);
   settingsEls.showPractice.checked = Boolean(data.showPractice);
+  settingsEls.showMemo.checked = Boolean(data.showMemo);
   settingsEls.showSplit.checked = Boolean(data.showSplit);
   settingsEls.showClock.checked = Boolean(data.showClock);
   settingsEls.showLastUpdate.checked = Boolean(data.showLastUpdate);
   settingsEls.showOverallBest.checked = Boolean(data.showOverallBest);
   settingsEls.showEffects.checked = Boolean(data.showEffects);
+  settingsEls.memoTitle.value = data.memoTitle ?? 'Memo';
 }
 
 async function saveSettings(event) {
@@ -75,11 +79,13 @@ async function saveSettings(event) {
     showKana: settingsEls.showKana.checked,
     showCarNo: settingsEls.showCarNo.checked,
     showPractice: settingsEls.showPractice.checked,
+    showMemo: settingsEls.showMemo.checked,
     showSplit: settingsEls.showSplit.checked,
     showClock: settingsEls.showClock.checked,
     showLastUpdate: settingsEls.showLastUpdate.checked,
     showOverallBest: settingsEls.showOverallBest.checked,
     showEffects: settingsEls.showEffects.checked,
+    memoTitle: settingsEls.memoTitle.value.trim() || 'Memo',
     autoBackupIntervalMin: Number(settingsEls.autoBackupIntervalMin.value || 5),
   };
 
@@ -133,11 +139,13 @@ function renderCurrentSettings(data) {
     ['Show Kana', boolText(data.showKana)],
     ['Show Car No', boolText(data.showCarNo)],
     ['Show Practice', boolText(data.showPractice)],
+    ['Show Memo', boolText(data.showMemo)],
     ['Show Split', boolText(data.showSplit)],
     ['Show Clock', boolText(data.showClock)],
     ['Show Last Update', boolText(data.showLastUpdate)],
     ['Show Overall Best', boolText(data.showOverallBest)],
     ['Show Effects', boolText(data.showEffects)],
+    ['Memo Column Title', data.memoTitle ?? 'Memo'],
     ['Auto Backup Interval', `${data.autoBackupIntervalMin ?? 5} min`],
   ];
 

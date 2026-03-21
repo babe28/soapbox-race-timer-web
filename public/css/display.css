@@ -100,6 +100,14 @@ body.display-body {
   font-size: 17px;
   color: var(--muted);
 }
+.results-table .cell-memo {
+  text-align: left;
+  color: #c9d7f4;
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .results-table .cell-best.best-mark {
   color: var(--accent-2);
   font-weight: 800;
@@ -108,9 +116,10 @@ body.display-body {
 }
 .col-pos { width: 70px; }
 .col-no { width: 90px; }
-.col-name { width: 280px; }
-.col-kana { width: 220px; }
+.col-name { width: 240px; }
+.col-kana { width: 170px; }
 .col-car { width: 90px; }
+.col-memo { width: 220px; }
 .col-practice { width: 145px; }
 .col-split { width: 130px; }
 .col-goal { width: 145px; }
@@ -173,6 +182,8 @@ body.hide-kana .col-kana,
 body.hide-kana .cell-kana { display: none; }
 body.hide-car .col-car,
 body.hide-car .cell-car { display: none; }
+body.hide-memo .col-memo,
+body.hide-memo .cell-memo { display: none; }
 body.hide-practice .col-practice,
 body.hide-practice .cell-practice { display: none; }
 body.practice-only .race-col { display: none; }

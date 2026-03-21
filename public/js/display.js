@@ -1,21 +1,37 @@
 (async function () {
-  const common = window.SoapboxCommon;
   const body = document.body;
   const app = document.getElementById('displayApp');
+  const rowElements = new Map();
   let pollTimer = null;
+  let pollRequestId = 0;
+  let currentPollController = null;
   const ROW_HIGHLIGHT_MS = 30000;
   const TIME_FLASH_MS = 30000;
   const BEST_MARK_MS = 30000;
 
   async function loadDisplay() {
+    const requestId = ++pollRequestId;
+    currentPollController?.abort();
+    currentPollController = new AbortController();
+
     try {
-      const res = await fetch('/api/display/current', { cache: 'no-store' });
+      const res = await fetch('/api/display/current', {
+        cache: 'no-store',
+        signal: currentPollController.signal,
+      });
       const data = await res.json();
+      if (requestId !== pollRequestId) return;
       render(data);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error(err);
       if (!document.getElementById('displayLoadError')) {
         app.insertAdjacentHTML('beforeend', '<div id="displayLoadError" style="padding:20px;color:#ff6a7d;">Failed to load display data</div>');
+      }
+    } finally {
+      if (requestId === pollRequestId) {
+        clearTimeout(pollTimer);
+        pollTimer = setTimeout(loadDisplay, 1000);
       }
     }
   }
@@ -36,6 +52,7 @@
     document.getElementById('thName').textContent = labels.name || 'Name';
     document.getElementById('thKana').textContent = labels.kana || 'Kana';
     document.getElementById('thCar').textContent = labels.car || 'Car';
+    document.getElementById('thMemo').textContent = data.settings?.memoTitle || labels.memo || 'Memo';
     document.getElementById('thPractice').textContent = labels.practice || 'Practice';
     document.getElementById('thR1Split').textContent = labels.r1Split || 'R1-Sec';
     document.getElementById('thR1Goal').textContent = labels.r1Goal || 'R1-Goal';
@@ -62,33 +79,78 @@
     body.classList.toggle('practice-only', data.mode === 'practice');
     body.classList.toggle('hide-kana', !data.settings?.showKana);
     body.classList.toggle('hide-car', !data.settings?.showCarNo);
+    body.classList.toggle('hide-memo', !data.settings?.showMemo);
     body.classList.toggle('hide-practice', !data.settings?.showPractice && data.mode !== 'practice');
     body.classList.toggle('hide-clock', !data.settings?.showClock);
     body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
     body.classList.toggle('hide-overall-best', !data.settings?.showOverallBest);
 
-    const tbody = document.getElementById('resultsBody');
-    tbody.innerHTML = '';
+    syncRows(data.rows || []);
+  }
 
-    for (const row of data.rows || []) {
-      const tr = document.createElement('tr');
-      if (row.highlight || isRecent(row.highlightUpdatedAt, ROW_HIGHLIGHT_MS)) tr.classList.add('highlight');
-      if (!row.rank) tr.classList.add('unrun');
-      tr.innerHTML = `
-        <td>${escapeHtml(row.rank || '')}</td>
-        <td>${escapeHtml(row.bibNo || '')}</td>
-        <td class="cell-name">${escapeHtml(row.name || '')}</td>
-        <td class="cell-kana">${escapeHtml(row.kana || '')}</td>
-        <td class="cell-car">${escapeHtml(row.carNo || '')}</td>
-        <td class="cell-practice ${enteredClass(row.practiceUpdatedAt)}">${escapeHtml(row.practice || '--.---')}</td>
-        <td class="cell-split race-col ${enteredClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.split || '--.---')}</td>
-        <td class="race-col ${enteredClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.goal || '--.---')}</td>
-        <td class="cell-split race-col ${enteredClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.split || '--.---')}</td>
-        <td class="race-col ${enteredClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.goal || '--.---')}</td>
-        <td class="cell-best race-col ${bestClass(row.bestUpdatedAt)}">${escapeHtml(row.best || '--.---')}</td>
-      `;
+  function syncRows(rows) {
+    const tbody = document.getElementById('resultsBody');
+    const seenKeys = new Set();
+
+    for (const row of rows) {
+      const key = String(row.bibNo ?? row.name ?? '');
+      seenKeys.add(key);
+
+      let tr = rowElements.get(key);
+      if (!tr) {
+        tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-cell="rank"></td>
+          <td data-cell="bibNo"></td>
+          <td class="cell-name" data-cell="name"></td>
+          <td class="cell-kana" data-cell="kana"></td>
+          <td class="cell-car" data-cell="carNo"></td>
+          <td class="cell-memo" data-cell="memo"></td>
+          <td class="cell-practice" data-cell="practice"></td>
+          <td class="cell-split race-col" data-cell="r1split"></td>
+          <td class="race-col" data-cell="r1goal"></td>
+          <td class="cell-split race-col" data-cell="r2split"></td>
+          <td class="race-col" data-cell="r2goal"></td>
+          <td class="cell-best race-col" data-cell="best"></td>
+        `;
+        rowElements.set(key, tr);
+      }
+
+      updateRow(tr, row);
       tbody.appendChild(tr);
     }
+
+    for (const [key, tr] of rowElements.entries()) {
+      if (seenKeys.has(key)) continue;
+      tr.remove();
+      rowElements.delete(key);
+    }
+  }
+
+  function updateRow(tr, row) {
+    tr.classList.toggle('highlight', row.highlight || isRecent(row.highlightUpdatedAt, ROW_HIGHLIGHT_MS));
+    tr.classList.toggle('unrun', !row.rank);
+
+    setCell(tr, 'rank', row.rank || '');
+    setCell(tr, 'bibNo', row.bibNo || '');
+    setCell(tr, 'name', row.name || '');
+    setCell(tr, 'kana', row.kana || '');
+    setCell(tr, 'carNo', row.carNo || '');
+    setCell(tr, 'memo', row.memo || '');
+    setCell(tr, 'practice', row.practice || '--.---', enteredClass(row.practiceUpdatedAt));
+    setCell(tr, 'r1split', row.r1?.split || '--.---', enteredClass(row.r1?.updatedAt));
+    setCell(tr, 'r1goal', row.r1?.goal || '--.---', enteredClass(row.r1?.updatedAt));
+    setCell(tr, 'r2split', row.r2?.split || '--.---', enteredClass(row.r2?.updatedAt));
+    setCell(tr, 'r2goal', row.r2?.goal || '--.---', enteredClass(row.r2?.updatedAt));
+    setCell(tr, 'best', row.best || '--.---', bestClass(row.bestUpdatedAt));
+  }
+
+  function setCell(tr, name, value, extraClass = '') {
+    const td = tr.querySelector(`[data-cell="${name}"]`);
+    if (!td) return;
+    td.textContent = value;
+    td.classList.toggle('time-entered', extraClass === 'time-entered');
+    td.classList.toggle('time-best', extraClass === 'time-best');
   }
 
   function enteredClass(updatedAt) {
@@ -103,7 +165,8 @@
 
   function isRecent(updatedAt, windowMs) {
     const ts = parseTimestamp(updatedAt);
-    return ts !== null && (Date.now() - ts) >= 0 && (Date.now() - ts) <= windowMs;
+    const age = ts === null ? Number.POSITIVE_INFINITY : Date.now() - ts;
+    return age >= 0 && age <= windowMs;
   }
 
   function parseTimestamp(value) {
@@ -112,15 +175,5 @@
     return Number.isNaN(ts) ? null : ts;
   }
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
   await loadDisplay();
-  if (!pollTimer) pollTimer = setInterval(loadDisplay, 1000);
 })();
