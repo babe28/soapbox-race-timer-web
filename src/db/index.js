@@ -34,6 +34,53 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'overall_best_include_practice')) {
       db.exec('ALTER TABLE settings ADD COLUMN overall_best_include_practice INTEGER NOT NULL DEFAULT 0');
     }
+
+    const settingsTable = db.prepare(`
+      SELECT sql
+      FROM sqlite_master
+      WHERE type = 'table' AND name = 'settings'
+    `).get();
+    if (settingsTable?.sql && settingsTable.sql.includes('rows_per_page IN (20, 30)')) {
+      db.exec(`
+        ALTER TABLE settings RENAME TO settings_old;
+        CREATE TABLE settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          event_name TEXT NOT NULL DEFAULT 'Soap Box Derby',
+          class_name TEXT NOT NULL DEFAULT 'Super Stock',
+          language TEXT NOT NULL DEFAULT 'en',
+          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30, 40)),
+          show_kana INTEGER NOT NULL DEFAULT 1,
+          show_car_no INTEGER NOT NULL DEFAULT 1,
+          show_practice INTEGER NOT NULL DEFAULT 1,
+          show_memo INTEGER NOT NULL DEFAULT 0,
+          show_split INTEGER NOT NULL DEFAULT 1,
+          show_clock INTEGER NOT NULL DEFAULT 1,
+          show_last_update INTEGER NOT NULL DEFAULT 1,
+          show_overall_best INTEGER NOT NULL DEFAULT 1,
+          overall_best_include_practice INTEGER NOT NULL DEFAULT 0,
+          show_effects INTEGER NOT NULL DEFAULT 1,
+          memo_title TEXT NOT NULL DEFAULT 'Memo',
+          auto_backup_interval_min INTEGER NOT NULL DEFAULT 5,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO settings (
+          id, event_name, class_name, language, rows_per_page,
+          show_kana, show_car_no, show_practice, show_memo, show_split,
+          show_clock, show_last_update, show_overall_best, overall_best_include_practice,
+          show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
+        )
+        SELECT
+          id, event_name, class_name, language, rows_per_page,
+          show_kana, show_car_no, show_practice,
+          COALESCE(show_memo, 0), show_split,
+          show_clock, show_last_update, show_overall_best,
+          COALESCE(overall_best_include_practice, 0),
+          show_effects, COALESCE(memo_title, 'Memo'), auto_backup_interval_min, created_at, updated_at
+        FROM settings_old;
+        DROP TABLE settings_old;
+      `);
+    }
   });
   applySchema();
 }

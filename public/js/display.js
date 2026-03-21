@@ -85,6 +85,7 @@
     renderConnection(localConnectionOk && !!data.connection?.connected);
 
     body.classList.toggle('mode-30', data.settings?.rowsPerPage === 30);
+    body.classList.toggle('mode-40', data.settings?.rowsPerPage === 40);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
     body.classList.toggle('practice-only', data.mode === 'practice');
     body.classList.toggle('hide-kana', !data.settings?.showKana);

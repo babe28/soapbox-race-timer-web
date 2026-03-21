@@ -7,7 +7,7 @@ const schemaStatements = [
       event_name TEXT NOT NULL DEFAULT 'Soap Box Derby',
       class_name TEXT NOT NULL DEFAULT 'Super Stock',
       language TEXT NOT NULL DEFAULT 'en',
-      rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30)),
+      rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30, 40)),
       show_kana INTEGER NOT NULL DEFAULT 1,
       show_car_no INTEGER NOT NULL DEFAULT 1,
       show_practice INTEGER NOT NULL DEFAULT 1,
