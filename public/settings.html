@@ -58,6 +58,12 @@
               <label class="radio-card"><input type="radio" name="rowsPerPage" value="40" /> <span>40 rows</span></label>
             </div>
 
+            <div class="radio-card-group full-width">
+              <span class="field-label">Display Sort</span>
+              <label class="radio-card"><input type="radio" name="displaySortMode" value="time" /> <span>Time</span></label>
+              <label class="radio-card"><input type="radio" name="displaySortMode" value="bib" /> <span>Entry No</span></label>
+            </div>
+
             <div class="check-grid full-width">
               <label class="check-card"><input type="checkbox" id="showKana" /> <span>Show Kana</span></label>
               <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>Show Car No</span></label>
@@ -96,6 +102,7 @@
             <button id="exportCsvBtn" type="button" class="primary">Export CSV</button>
             <button id="reloadLogsBtn" type="button">Reload Logs</button>
             <button id="reloadApisBtn" type="button">Reload API List</button>
+            <button id="clearRunsBtn" type="button" class="warn-button">Clear Times Only</button>
           </div>
         </div>
         <div class="panel-section">

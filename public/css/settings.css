@@ -79,6 +79,11 @@
   border-color: rgba(255, 106, 125, 0.5);
   color: #ffd9df;
 }
+.warn-button {
+  background: rgba(255, 207, 90, 0.16);
+  border-color: rgba(255, 207, 90, 0.42);
+  color: #fff0bf;
+}
 .current-settings {
   display: grid;
   gap: 10px;

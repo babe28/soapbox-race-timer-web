@@ -34,6 +34,9 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'overall_best_include_practice')) {
       db.exec('ALTER TABLE settings ADD COLUMN overall_best_include_practice INTEGER NOT NULL DEFAULT 0');
     }
+    if (!settingsColumns.some((column) => column.name === 'display_sort_mode')) {
+      db.exec("ALTER TABLE settings ADD COLUMN display_sort_mode TEXT NOT NULL DEFAULT 'time'");
+    }
 
     const settingsTable = db.prepare(`
       SELECT sql
@@ -49,6 +52,8 @@ function initDb(db) {
           class_name TEXT NOT NULL DEFAULT 'Super Stock',
           language TEXT NOT NULL DEFAULT 'en',
           rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30, 40)),
+          display_sort_mode TEXT NOT NULL DEFAULT 'time'
+              CHECK (display_sort_mode IN ('time', 'bib')),
           show_kana INTEGER NOT NULL DEFAULT 1,
           show_car_no INTEGER NOT NULL DEFAULT 1,
           show_practice INTEGER NOT NULL DEFAULT 1,
@@ -65,13 +70,14 @@ function initDb(db) {
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         INSERT INTO settings (
-          id, event_name, class_name, language, rows_per_page,
+          id, event_name, class_name, language, rows_per_page, display_sort_mode,
           show_kana, show_car_no, show_practice, show_memo, show_split,
           show_clock, show_last_update, show_overall_best, overall_best_include_practice,
           show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
         )
         SELECT
           id, event_name, class_name, language, rows_per_page,
+          'time',
           show_kana, show_car_no, show_practice,
           COALESCE(show_memo, 0), show_split,
           show_clock, show_last_update, show_overall_best,
@@ -100,4 +106,13 @@ function resetDb(db) {
   reset();
 }
 
-module.exports = { createDb, initDb, resetDb };
+function clearRunsOnly(db) {
+  const clear = db.transaction(() => {
+    db.exec('DELETE FROM runs');
+    db.exec('UPDATE display_state SET last_update_at = NULL, overall_best_run_id = NULL, now_running_entry_id = NULL, next_entry_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = 1');
+    db.exec("DELETE FROM sqlite_sequence WHERE name IN ('runs')");
+  });
+  clear();
+}
+
+module.exports = { createDb, initDb, resetDb, clearRunsOnly };

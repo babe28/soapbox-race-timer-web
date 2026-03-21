@@ -1,7 +1,7 @@
 const express = require('express');
 const { getSettings, updateSettings } = require('../services/settingsService');
 const { validateLanguage } = require('../services/validation');
-const { resetDb } = require('../db');
+const { resetDb, clearRunsOnly } = require('../db');
 const { getDisplayCurrent } = require('../services/displayService');
 const { listAuditLogs } = require('../services/auditService');
 
@@ -40,6 +40,7 @@ function getApiCatalog() {
     { method: 'GET', path: '/api/settings', description: 'Load current settings' },
     { method: 'PUT', path: '/api/settings', description: 'Update settings' },
     { method: 'POST', path: '/api/settings/reset-db', description: 'Initialize database' },
+    { method: 'POST', path: '/api/settings/clear-runs', description: 'Delete runs only' },
     { method: 'GET', path: '/api/settings/export/results.csv', description: 'Export current results as CSV' },
     { method: 'GET', path: '/api/settings/logs', description: 'Read audit logs' },
     { method: 'GET', path: '/api/settings/apis', description: 'Read API catalog' },
@@ -101,6 +102,14 @@ function createSettingsRouter(db, wsHub) {
     wsHub.broadcast('settings_updated');
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('heat_updated');
+    wsHub.broadcast('run_updated');
+    wsHub.broadcast('state_update');
+    wsHub.broadcast('display_update');
+    res.json({ ok: true, settings: getSettings(db) });
+  });
+
+  router.post('/clear-runs', (_req, res) => {
+    clearRunsOnly(db);
     wsHub.broadcast('run_updated');
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');

@@ -273,6 +273,9 @@ function getDisplayCurrent(db) {
   };
 
   const rows = [...rankingRows.map(mapRow), ...unrunRows.map(mapRow)];
+  if (settings.displaySortMode === 'bib') {
+    rows.sort((a, b) => Number(a.bibNo || 0) - Number(b.bibNo || 0));
+  }
   const nowEntry = state?.now_running_entry_id
     ? db.prepare('SELECT bib_no, name FROM entries WHERE id = ?').get(state.now_running_entry_id)
     : null;

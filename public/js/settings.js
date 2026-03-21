@@ -12,6 +12,7 @@ function bindSettingsElements() {
   settingsEls.className = document.getElementById('className');
   settingsEls.language = document.getElementById('language');
   settingsEls.autoBackupIntervalMin = document.getElementById('autoBackupIntervalMin');
+  settingsEls.clearRunsBtn = document.getElementById('clearRunsBtn');
   settingsEls.showKana = document.getElementById('showKana');
   settingsEls.showCarNo = document.getElementById('showCarNo');
   settingsEls.showPractice = document.getElementById('showPractice');
@@ -38,6 +39,7 @@ function bindSettingsEvents() {
   settingsEls.reloadSettingsBtn?.addEventListener('click', loadSettings);
   settingsEls.resetDbBtn?.addEventListener('click', resetDatabase);
   settingsEls.exportCsvBtn?.addEventListener('click', exportCsv);
+  settingsEls.clearRunsBtn?.addEventListener('click', clearRunsOnly);
   settingsEls.reloadLogsBtn?.addEventListener('click', loadAuditLogs);
   settingsEls.reloadApisBtn?.addEventListener('click', loadApiCatalog);
 }
@@ -68,6 +70,10 @@ function applySettingsToForm(data) {
   document.querySelectorAll('input[name="rowsPerPage"]').forEach((radio) => {
     radio.checked = radio.value === rowsPerPage;
   });
+  const displaySortMode = String(data.displaySortMode ?? 'time');
+  document.querySelectorAll('input[name="displaySortMode"]').forEach((radio) => {
+    radio.checked = radio.value === displaySortMode;
+  });
 
   settingsEls.showKana.checked = Boolean(data.showKana);
   settingsEls.showCarNo.checked = Boolean(data.showCarNo);
@@ -90,6 +96,7 @@ async function saveSettings(event) {
     className: settingsEls.className.value.trim(),
     language: settingsEls.language.value,
     rowsPerPage: Number(document.querySelector('input[name="rowsPerPage"]:checked')?.value || 20),
+    displaySortMode: document.querySelector('input[name="displaySortMode"]:checked')?.value || 'time',
     showKana: settingsEls.showKana.checked,
     showCarNo: settingsEls.showCarNo.checked,
     showPractice: settingsEls.showPractice.checked,
@@ -146,6 +153,28 @@ async function resetDatabase() {
   }
 }
 
+async function clearRunsOnly() {
+  if (!window.confirm('Delete runs only? Entries and heats will remain.')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/settings/clear-runs', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Failed to clear runs');
+      return;
+    }
+    applySettingsToForm(data.settings || {});
+    renderCurrentSettings(data.settings || {});
+    await loadAuditLogs();
+    alert('Runs cleared');
+  } catch (err) {
+    console.error(err);
+    alert('Failed to clear runs');
+  }
+}
+
 function exportCsv() {
   window.location.href = '/api/settings/export/results.csv';
 }
@@ -178,6 +207,7 @@ function renderCurrentSettings(data) {
     ['Class Name', data.className ?? ''],
     ['Language', data.language ?? ''],
     ['Rows Per Page', `${data.rowsPerPage ?? 20}`],
+    ['Display Sort', data.displaySortMode ?? 'time'],
     ['Show Kana', boolText(data.showKana)],
     ['Show Car No', boolText(data.showCarNo)],
     ['Show Practice', boolText(data.showPractice)],
