@@ -5,6 +5,7 @@
   let pollTimer = null;
   let pollRequestId = 0;
   let currentPollController = null;
+  let liveTick = 0;
   const ROW_HIGHLIGHT_MS = 30000;
   const TIME_FLASH_MS = 30000;
   const BEST_MARK_MS = 30000;
@@ -21,6 +22,7 @@
       });
       const data = await res.json();
       if (requestId !== pollRequestId) return;
+      liveTick = (liveTick + 1) % 100;
       render(data);
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -47,6 +49,7 @@
     document.getElementById('labelNowRunning').textContent = labels.nowRunning || 'Now Running';
     document.getElementById('labelNext').textContent = labels.next || 'Next';
     document.getElementById('labelConnection').textContent = labels.connection || 'Connection';
+    document.getElementById('thRunStatus').textContent = labels.runStatus || 'Status';
     document.getElementById('thPos').textContent = labels.pos || 'Pos';
     document.getElementById('thNo').textContent = labels.no || 'No';
     document.getElementById('thName').textContent = labels.name || 'Name';
@@ -68,6 +71,11 @@
     document.getElementById('overallBest').textContent = data.header?.overallBest || '--.---';
     document.getElementById('nowRunning').textContent = data.nowRunning || '-';
     document.getElementById('nextRunning').textContent = data.next || '-';
+
+    const liveState = document.getElementById('liveState');
+    if (liveState) {
+      liveState.textContent = `LIVE ${String(liveTick).padStart(2, '0')}`;
+    }
 
     const connectionEl = document.getElementById('connectionState');
     const connected = !!data.connection?.connected;
@@ -100,6 +108,7 @@
       if (!tr) {
         tr = document.createElement('tr');
         tr.innerHTML = `
+          <td class="cell-run-status" data-cell="status"></td>
           <td data-cell="rank"></td>
           <td data-cell="bibNo"></td>
           <td class="cell-name" data-cell="name"></td>
@@ -131,6 +140,7 @@
     tr.classList.toggle('highlight', row.highlight || isRecent(row.highlightUpdatedAt, ROW_HIGHLIGHT_MS));
     tr.classList.toggle('unrun', !row.rank);
 
+    setCell(tr, 'status', row.status || '', '', row.statusTone ? `status-${row.statusTone}` : 'status-empty');
     setCell(tr, 'rank', row.rank || '');
     setCell(tr, 'bibNo', row.bibNo || '');
     setCell(tr, 'name', row.name || '');
@@ -145,22 +155,23 @@
     setCell(tr, 'best', row.best || '--.---', bestClass(row.bestUpdatedAt));
   }
 
-  function setCell(tr, name, value, extraClass = '') {
+  function setCell(tr, name, value, extraClass = '', toneClass = '') {
     const td = tr.querySelector(`[data-cell="${name}"]`);
     if (!td) return;
     td.textContent = value;
     td.classList.toggle('time-entered', extraClass === 'time-entered');
     td.classList.toggle('time-best', extraClass === 'time-best');
+    if (name === 'status') {
+      td.className = `cell-run-status ${toneClass}`.trim();
+    }
   }
 
   function enteredClass(updatedAt) {
-    if (!isRecent(updatedAt, TIME_FLASH_MS)) return '';
-    return 'time-entered';
+    return isRecent(updatedAt, TIME_FLASH_MS) ? 'time-entered' : '';
   }
 
   function bestClass(updatedAt) {
-    if (!isRecent(updatedAt, BEST_MARK_MS)) return '';
-    return 'time-best';
+    return isRecent(updatedAt, BEST_MARK_MS) ? 'time-best' : '';
   }
 
   function isRecent(updatedAt, windowMs) {

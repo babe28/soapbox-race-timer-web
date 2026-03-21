@@ -8,7 +8,9 @@ body.display-body {
   height: 1080px;
   display: grid;
   grid-template-rows: 112px 1fr 100px;
-  background: linear-gradient(180deg, #07101d 0%, #0b1220 100%);
+  background:
+    radial-gradient(circle at top left, rgba(84, 109, 255, 0.14), transparent 30%),
+    linear-gradient(180deg, #050814 0%, #0a1020 48%, #080d17 100%);
 }
 .display-header {
   display: grid;
@@ -17,14 +19,15 @@ body.display-body {
   padding: 14px 22px 0;
 }
 .header-block {
-  background: rgba(17, 26, 46, 0.95);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(23, 31, 58, 0.96), rgba(12, 18, 36, 0.96));
+  border: 1px solid rgba(127, 149, 255, 0.28);
   border-radius: 16px;
   padding: 12px 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .header-block .label {
   font-size: 12px;
-  color: var(--muted);
+  color: #9fb1ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 6px;
@@ -32,6 +35,7 @@ body.display-body {
 .header-block .value {
   font-size: 30px;
   font-weight: 800;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -39,8 +43,9 @@ body.display-body {
 .header-event .value {
   font-size: 34px;
 }
-.status-value, .best-value {
-  color: var(--accent-2);
+.status-value,
+.best-value {
+  color: #ffe669;
   font-size: 32px;
 }
 .display-main {
@@ -49,120 +54,164 @@ body.display-body {
 .results-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 6px;
+  border-spacing: 0 5px;
   table-layout: fixed;
 }
 .results-table thead th {
-  background: #16233b;
-  color: #c9d7f4;
-  font-size: 20px;
-  font-weight: 700;
+  background: linear-gradient(180deg, #27305c 0%, #181f3f 100%);
+  color: #f2f4ff;
+  font-size: 19px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 14px 10px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  padding: 13px 10px;
+  border-top: 1px solid rgba(149, 168, 255, 0.35);
+  border-bottom: 1px solid rgba(149, 168, 255, 0.25);
 }
 .results-table tbody td {
-  background: rgba(12, 20, 38, 0.95);
-  border-top: 1px solid rgba(48, 66, 101, 0.6);
-  border-bottom: 1px solid rgba(48, 66, 101, 0.6);
+  color: #ffffff;
+  border-top: 1px solid rgba(140, 153, 217, 0.26);
+  border-bottom: 1px solid rgba(64, 75, 128, 0.38);
   padding: 10px 10px;
   font-size: 22px;
   line-height: 1.1;
   text-align: center;
+  background: rgba(20, 28, 56, 0.96);
+}
+.results-table tbody tr:nth-child(odd) td {
+  background: rgba(22, 30, 61, 0.97);
+}
+.results-table tbody tr:nth-child(even) td {
+  background: rgba(11, 18, 40, 0.97);
 }
 .results-table tbody tr.highlight td {
-  background: rgba(40, 57, 92, 0.99);
-  box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.22), 0 0 28px rgba(255, 207, 90, 0.12);
+  background: rgba(52, 64, 118, 0.99);
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 100, 0.22), 0 0 22px rgba(255, 231, 100, 0.12);
   animation: row-highlight-glow 1.6s ease-in-out infinite;
 }
 .results-table tbody tr.unrun td {
-  color: #a8b7d6;
+  color: #d7ddff;
 }
 .results-table tbody td.time-entered {
   font-weight: 800;
   animation: time-entered-pulse 1.1s steps(2, end) infinite;
 }
 .results-table tbody td.time-best {
-  color: var(--accent-2);
+  color: #ffe96f;
   font-weight: 800;
-  text-shadow: 0 0 14px rgba(255, 207, 90, 0.35);
+  text-shadow: 0 0 14px rgba(255, 233, 111, 0.38);
+}
+.results-table .cell-run-status {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+.results-table .status-finished {
+  background: linear-gradient(180deg, #ffe970 0%, #ffc53a 100%) !important;
+  color: #2a2100;
+}
+.results-table .status-pending {
+  background: linear-gradient(180deg, #7ca2ff 0%, #4e72ff 100%) !important;
+}
+.results-table .status-dq,
+.results-table .status-void {
+  background: linear-gradient(180deg, #ff8b79 0%, #ff5f68 100%) !important;
+}
+.results-table .status-dnf,
+.results-table .status-scratch {
+  background: linear-gradient(180deg, #9b7cff 0%, #6b4cff 100%) !important;
+}
+.results-table .status-empty {
+  background: rgba(36, 44, 76, 0.92) !important;
+  color: #9aa9e2;
 }
 .results-table .cell-name {
-  font-weight: 800;
-  text-align: left;
+  font-weight: 900;
+  text-align: center;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .results-table .cell-kana {
   font-size: 17px;
-  color: var(--muted);
+  color: #e3e8ff;
 }
 .results-table .cell-memo {
-  text-align: left;
-  color: #c9d7f4;
+  text-align: center;
+  color: #ffffff;
   font-size: 17px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.results-table .cell-best.best-mark {
-  color: var(--accent-2);
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.col-pos { width: 70px; }
-.col-no { width: 90px; }
-.col-name { width: 240px; }
-.col-kana { width: 170px; }
+.col-run-status { width: 76px; }
+.col-pos { width: 68px; }
+.col-no { width: 86px; }
+.col-name { width: 220px; }
+.col-kana { width: 160px; }
 .col-car { width: 90px; }
-.col-memo { width: 220px; }
-.col-practice { width: 145px; }
-.col-split { width: 130px; }
-.col-goal { width: 145px; }
-.col-best { width: 145px; }
+.col-memo { width: 210px; }
+.col-practice { width: 140px; }
+.col-split { width: 124px; }
+.col-goal { width: 140px; }
+.col-best { width: 140px; }
 .display-footer {
   display: grid;
-  grid-template-columns: 1.5fr 1.5fr 0.8fr;
+  grid-template-columns: 1.5fr 1.5fr 0.95fr;
   gap: 14px;
   padding: 10px 22px 18px;
 }
 .footer-block {
-  background: rgba(17, 26, 46, 0.95);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(23, 31, 58, 0.96), rgba(12, 18, 36, 0.96));
+  border: 1px solid rgba(127, 149, 255, 0.28);
   border-radius: 16px;
   padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 .footer-label {
-  color: var(--muted);
+  color: #9fb1ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 14px;
 }
 .footer-value {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+}
+.footer-live {
+  min-width: 88px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #061220;
+  background: linear-gradient(90deg, #8bf5d2 0%, #7ce7ff 50%, #8bf5d2 100%);
+  background-size: 220% 100%;
+  border-radius: 999px;
+  padding: 8px 12px;
+  animation: live-gradient 2.8s linear infinite;
 }
 .connection-ok {
-  color: var(--ok);
+  color: #bbffb3;
+  text-shadow: 0 0 10px rgba(143, 255, 162, 0.28);
 }
 .connection-ng {
-  color: var(--danger);
+  color: #ff8f9f;
 }
 @keyframes row-highlight-glow {
   0%, 100% {
-    background-color: rgba(31, 43, 70, 0.92);
-    box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.12), 0 0 10px rgba(255, 207, 90, 0.05);
+    background-color: rgba(33, 43, 88, 0.96);
+    box-shadow: inset 0 0 0 1px rgba(255, 231, 100, 0.14), 0 0 10px rgba(255, 231, 100, 0.05);
   }
   50% {
-    background-color: rgba(50, 70, 112, 1);
-    box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.32), 0 0 28px rgba(255, 207, 90, 0.18);
+    background-color: rgba(63, 79, 143, 1);
+    box-shadow: inset 0 0 0 1px rgba(255, 231, 100, 0.3), 0 0 24px rgba(255, 231, 100, 0.16);
   }
 }
 @keyframes time-entered-pulse {
@@ -170,12 +219,22 @@ body.display-body {
     opacity: 1;
   }
   50%, 100% {
-    opacity: 0.35;
+    opacity: 0.34;
   }
 }
-body.mode-30 .results-table thead th { font-size: 18px; padding: 12px 8px; }
-body.mode-30 .results-table tbody td { font-size: 19px; padding: 8px 8px; }
-body.mode-30 .results-table .cell-kana { font-size: 15px; }
+@keyframes live-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 220% 50%;
+  }
+}
+body.mode-30 .results-table thead th { font-size: 17px; padding: 11px 8px; }
+body.mode-30 .results-table tbody td { font-size: 18px; padding: 8px 8px; }
+body.mode-30 .results-table .cell-kana,
+body.mode-30 .results-table .cell-memo { font-size: 14px; }
+body.mode-30 .results-table .cell-run-status { font-size: 13px; }
 body.hide-split .split-col,
 body.hide-split .cell-split { display: none; }
 body.hide-kana .col-kana,

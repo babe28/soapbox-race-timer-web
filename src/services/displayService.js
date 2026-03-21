@@ -50,6 +50,37 @@ function getBestDisplayRunByEntry(db, entryId, practiceOnly) {
   `).get(entryId);
 }
 
+function getLatestStatusRunByEntry(db, entryId, practiceOnly) {
+  return db.prepare(`
+    SELECT *
+    FROM runs
+    WHERE entry_id = ?
+      AND valid_for_display = 1
+      ${practiceOnly ? `AND run_type = 'practice'` : ''}
+    ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+    LIMIT 1
+  `).get(entryId);
+}
+
+function getRunStatusBadge(status) {
+  switch (status) {
+    case 'finished':
+      return { code: 'OK', tone: 'finished' };
+    case 'pending':
+      return { code: 'P', tone: 'pending' };
+    case 'dq':
+      return { code: 'DQ', tone: 'dq' };
+    case 'dnf':
+      return { code: 'DNF', tone: 'dnf' };
+    case 'scratch':
+      return { code: 'SCR', tone: 'scratch' };
+    case 'void':
+      return { code: 'V', tone: 'void' };
+    default:
+      return { code: '', tone: 'empty' };
+  }
+}
+
 function formatJstTime(value) {
   if (!value) return '-';
   const date = new Date(String(value).endsWith('Z') ? value : `${value}Z`);
@@ -68,6 +99,7 @@ function getLanguagePack(language, practiceOnly) {
   return {
     labels: {
       pos: practiceOnly ? (isJa ? '\u66ab\u5b9a\u9806\u4f4d(\u7df4\u7fd2\u8d70\u884c)' : 'Practice Rank') : (isJa ? '\u9806\u4f4d' : 'Pos'),
+      runStatus: isJa ? '\u72b6\u614b' : 'Status',
       no: 'No',
       name: isJa ? '\u9078\u624b\u540d' : 'Name',
       kana: isJa ? '\u304b\u306a' : 'Kana',
@@ -205,8 +237,12 @@ function getDisplayCurrent(db) {
     const r2 = getBestRunByEntryAndType(db, row.id, 'race2');
     const latestRun = getLatestDisplayRunByEntry(db, row.id, practiceOnly);
     const bestRun = getBestDisplayRunByEntry(db, row.id, practiceOnly);
+    const statusRun = getLatestStatusRunByEntry(db, row.id, practiceOnly);
+    const statusBadge = getRunStatusBadge(statusRun?.status);
 
     return {
+      status: statusBadge.code,
+      statusTone: statusBadge.tone,
       rank: row.rank_no ?? null,
       bibNo: row.bib_no,
       name: row.name,
