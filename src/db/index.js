@@ -43,7 +43,7 @@ function initDb(db) {
       FROM sqlite_master
       WHERE type = 'table' AND name = 'settings'
     `).get();
-    if (settingsTable?.sql && settingsTable.sql.includes('rows_per_page IN (20, 30)')) {
+    if (settingsTable?.sql && !settingsTable.sql.includes('rows_per_page IN (20, 30, 35, 40)')) {
       db.exec(`
         ALTER TABLE settings RENAME TO settings_old;
         CREATE TABLE settings (
@@ -51,7 +51,7 @@ function initDb(db) {
           event_name TEXT NOT NULL DEFAULT 'Soap Box Derby',
           class_name TEXT NOT NULL DEFAULT 'Super Stock',
           language TEXT NOT NULL DEFAULT 'en',
-          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30, 40)),
+          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (20, 30, 35, 40)),
           display_sort_mode TEXT NOT NULL DEFAULT 'time'
               CHECK (display_sort_mode IN ('time', 'bib')),
           show_kana INTEGER NOT NULL DEFAULT 1,
@@ -77,7 +77,7 @@ function initDb(db) {
         )
         SELECT
           id, event_name, class_name, language, rows_per_page,
-          'time',
+          COALESCE(display_sort_mode, 'time'),
           show_kana, show_car_no, show_practice,
           COALESCE(show_memo, 0), show_split,
           show_clock, show_last_update, show_overall_best,

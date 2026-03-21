@@ -271,6 +271,27 @@ body.mode-30 .results-table .status-flag { font-size: 10px; min-width: 44px; pad
 body.mode-30 .header-block .value { font-size: 24px; }
 body.mode-30 .header-event .value { font-size: 27px; }
 body.mode-30 .footer-value { font-size: 21px; }
+body.mode-35 .display-shell { grid-template-rows: 92px minmax(0, 1fr) 80px; }
+body.mode-35 .display-header { gap: 11px; padding: 8px 18px 0; }
+body.mode-35 .header-block { padding: 9px 13px; }
+body.mode-35 .header-block .label { font-size: 10px; margin-bottom: 3px; }
+body.mode-35 .header-block .value { font-size: 22px; }
+body.mode-35 .header-event .value { font-size: 25px; }
+body.mode-35 #lastUpdate { font-size: 17px; }
+body.mode-35 .status-value,
+body.mode-35 .best-value { font-size: 24px; }
+body.mode-35 .display-main { padding: 6px 18px 0; }
+body.mode-35 .results-table { border-spacing: 0 2px; }
+body.mode-35 .results-table thead th { font-size: 16px; padding: 6px 5px; }
+body.mode-35 .results-table tbody td { font-size: 15px; padding: 5px 5px; }
+body.mode-35 .results-table .cell-kana,
+body.mode-35 .results-table .cell-memo { font-size: 12px; }
+body.mode-35 .results-table .status-flag { font-size: 9px; min-width: 40px; padding: 5px 6px 4px; }
+body.mode-35 .display-footer { gap: 11px; padding: 6px 18px 11px; }
+body.mode-35 .footer-block { padding: 9px 13px; }
+body.mode-35 .footer-label { font-size: 11px; }
+body.mode-35 .footer-value { font-size: 18px; }
+body.mode-35 .footer-live { width: 15px; height: 15px; }
 body.mode-40 .display-shell { grid-template-rows: 88px minmax(0, 1fr) 76px; }
 body.mode-40 .display-header { gap: 10px; padding: 8px 16px 0; }
 body.mode-40 .header-block { padding: 8px 12px; }

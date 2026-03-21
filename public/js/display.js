@@ -9,9 +9,13 @@
   let ws = null;
   let wsReconnectTimer = null;
   let localConnectionOk = true;
-  const ROW_HIGHLIGHT_MS = 50000;
-  const TIME_FLASH_MS = 40000;
-  const BEST_MARK_MS = 40000;
+  // 単位はミリ秒です。1000 = 1秒。
+  // 行全体の明滅時間。保存や更新が入った行を見つけやすくします。
+  const ROW_HIGHLIGHT_MS = 12000;
+  // タイム欄そのものを点滅させる時間。入力直後のタイム確認用です。
+  const TIME_FLASH_MS = 16000;
+  // ベスト欄の色を変えて残す時間。少し長めにして更新を追いやすくします。
+  const BEST_MARK_MS = 22000;
 
   async function loadDisplay() {
     const requestId = ++pollRequestId;
@@ -132,6 +136,7 @@
     renderConnection(localConnectionOk && !!data.connection?.connected);
 
     body.classList.toggle('mode-30', data.settings?.rowsPerPage === 30);
+    body.classList.toggle('mode-35', data.settings?.rowsPerPage === 35);
     body.classList.toggle('mode-40', data.settings?.rowsPerPage === 40);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
     body.classList.toggle('practice-only', data.mode === 'practice');
