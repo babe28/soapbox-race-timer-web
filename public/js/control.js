@@ -4,6 +4,9 @@ let pollTimer = null;
 let pollRequestId = 0;
 let currentPollController = null;
 let preferredSelectedEntryId = null;
+let ws = null;
+let wsReconnectTimer = null;
+let externalTimerNoticeTimer = null;
 
 const fmt = window.SoapboxCommon?.formatMs || ((v) => String(v ?? '-'));
 const RUN_TYPE_STORAGE_KEY = 'soapbox:lastRunType';
@@ -12,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
   restoreRunType();
   loadControlState();
+  connectWs();
 });
 
 function bindEvents() {
@@ -136,6 +140,57 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
   return controlState;
 }
 
+function connectWs() {
+  clearTimeout(wsReconnectTimer);
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${protocol}//${window.location.host}/ws`;
+
+  try {
+    ws = new WebSocket(url);
+  } catch (_err) {
+    scheduleWsReconnect();
+    return;
+  }
+
+  ws.addEventListener('message', (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === 'state_update'
+        || message.type === 'entry_updated'
+        || message.type === 'run_updated') {
+        loadControlState();
+        return;
+      }
+      if (message.type === 'external_timer_input') {
+        applyExternalTimerInput(message);
+        return;
+      }
+      if (message.type === 'external_timer_error') {
+        showExternalTimerStatus(message.message || 'External timer input was ignored', 'error');
+      }
+    } catch (_err) {
+      // ignore invalid websocket payloads
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    scheduleWsReconnect();
+  });
+
+  ws.addEventListener('error', () => {
+    try {
+      ws?.close();
+    } catch (_err) {
+      // ignore close errors
+    }
+  });
+}
+
+function scheduleWsReconnect() {
+  clearTimeout(wsReconnectTimer);
+  wsReconnectTimer = setTimeout(connectWs, 1500);
+}
+
 function render(data) {
   document.getElementById('ctrlEventName').textContent = data.eventName ?? '-';
   document.getElementById('ctrlHeatNo').textContent = data.heatNo ? String(data.heatNo) : '-';
@@ -163,6 +218,34 @@ function render(data) {
   document.querySelectorAll('[data-status]').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.status === data.status);
   });
+}
+
+function applyExternalTimerInput(message) {
+  if (!selectedEntry?.id) {
+    showExternalTimerStatus('外部タイムを受信しましたが、選択中の選手がいないため入力しませんでした。', 'warn');
+    return;
+  }
+
+  const splitInput = document.getElementById('splitTime');
+  const goalInput = document.getElementById('goalTime');
+  if (splitInput) splitInput.value = message.splitTime || '';
+  if (goalInput) goalInput.value = message.goalTime || '';
+  showExternalTimerStatus(
+    `No.${selectedEntry.bibNo ?? '-'} ${selectedEntry.name ?? ''} に外部タイムを入力しました。 Split ${message.splitTime} / Goal ${message.goalTime}`,
+    'success',
+  );
+}
+
+function showExternalTimerStatus(message, tone = 'success') {
+  const el = document.getElementById('externalTimerStatus');
+  if (!el) return;
+  clearTimeout(externalTimerNoticeTimer);
+  el.hidden = false;
+  el.textContent = message;
+  el.className = `external-timer-status is-${tone}`;
+  externalTimerNoticeTimer = setTimeout(() => {
+    el.hidden = true;
+  }, 7000);
 }
 
 function setSelectedEntry(entry, fillForm = true) {

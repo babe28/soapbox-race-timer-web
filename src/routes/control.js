@@ -2,6 +2,27 @@ const express = require('express');
 const { getControlState } = require('../services/displayService');
 const { logAudit } = require('../services/auditService');
 
+function normalizeExternalTimerValue(value, label) {
+  const text = String(value ?? '').trim();
+  if (!text) {
+    return { error: `${label} is required` };
+  }
+  if (text.includes('?')) {
+    return { error: `${label} contains unreadable digits` };
+  }
+  if (!/^\d+$/.test(text)) {
+    return { error: `${label} must contain digits only` };
+  }
+
+  const padded = text.padStart(4, '0');
+  const secondsText = padded.slice(0, -3) || '0';
+  const millisecondsText = padded.slice(-3);
+  return {
+    raw: text,
+    formatted: `${Number(secondsText)}.${millisecondsText}`,
+  };
+}
+
 function getNextAvailableEntryId(db, excludedIds = []) {
   const ids = excludedIds.filter((id) => Number.isInteger(id) && id > 0);
   const placeholders = ids.map(() => '?').join(', ');
@@ -54,6 +75,27 @@ function createControlRouter(db, wsHub) {
 
   router.get('/state', (_req, res) => {
     res.json(getControlState(db));
+  });
+
+  router.post('/external-time', (req, res) => {
+    const upperResult = normalizeExternalTimerValue(req.body?.upper, 'upper');
+    const lowerResult = normalizeExternalTimerValue(req.body?.lower, 'lower');
+    const error = upperResult.error || lowerResult.error;
+
+    if (error) {
+      wsHub.broadcast('external_timer_error', { message: error });
+      return res.status(400).json({ error });
+    }
+
+    const payload = {
+      upper: upperResult.raw,
+      lower: lowerResult.raw,
+      splitTime: upperResult.formatted,
+      goalTime: lowerResult.formatted,
+      receivedAt: new Date().toISOString(),
+    };
+    wsHub.broadcast('external_timer_input', payload);
+    res.json({ ok: true, ...payload });
   });
 
   router.post('/action/set-now', (req, res) => {

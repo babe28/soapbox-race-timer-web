@@ -55,6 +55,7 @@ function getApiCatalog() {
     { method: 'DELETE', path: '/api/runs/:id', description: 'Delete run' },
     { method: 'GET', path: '/api/display/current', description: 'Read display payload' },
     { method: 'GET', path: '/api/control/state', description: 'Read race control state' },
+    { method: 'POST', path: '/api/control/external-time', description: 'Push external timer values into Race Control time inputs' },
     { method: 'POST', path: '/api/control/action/set-now', description: 'Set now running entry' },
     { method: 'POST', path: '/api/control/action/set-next', description: 'Set next entry' },
     { method: 'POST', path: '/api/control/action/move-next', description: 'Advance queue' },
