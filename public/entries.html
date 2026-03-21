@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entries / Edit</title>
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/entries.css" />
+</head>
+<body class="entries-body">
+  <div class="entries-shell">
+    <header class="page-header">
+      <div>
+        <h1>Entries / Edit</h1>
+        <p class="page-subtitle">選手情報と出走順を登録・編集します。</p>
+      </div>
+      <div class="header-actions">
+        <a class="ghost-button" href="/control.html">Race Control</a>
+        <a class="ghost-button" href="/display.html" target="_blank" rel="noopener noreferrer">Open Display</a>
+        <a class="ghost-button" href="/settings.html">Settings</a>
+      </div>
+    </header>
+
+    <main class="entries-grid">
+      <section class="panel">
+        <div class="panel-section">
+          <div class="section-title">Entry Form</div>
+          <form id="entryForm" class="entry-form">
+            <input type="hidden" id="entryId" />
+
+            <label>
+              <span>ゼッケン番号 *</span>
+              <input type="number" id="bibNo" min="1" step="1" required />
+            </label>
+
+            <label>
+              <span>選手名 *</span>
+              <input type="text" id="name" required />
+            </label>
+
+            <label>
+              <span>かな</span>
+              <input type="text" id="kana" />
+            </label>
+
+            <label>
+              <span>車番</span>
+              <input type="text" id="carNo" />
+            </label>
+
+            <label>
+              <span>スタート順 *</span>
+              <input type="number" id="startOrder" min="1" step="1" required />
+            </label>
+
+            <label>
+              <span>現在順</span>
+              <input type="number" id="effectiveOrder" min="1" step="1" />
+            </label>
+
+            <label class="full-width">
+              <span>メモ</span>
+              <input type="text" id="memo" />
+            </label>
+
+            <div class="button-row action-row full-width">
+              <button id="saveEntryBtn" class="primary" type="submit">保存</button>
+              <button id="resetEntryBtn" type="button">新規入力</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-section">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="section-title no-margin">Entries</div>
+              <input type="search" id="searchInput" placeholder="ゼッケン / 名前 / かな / 車番で検索" />
+            </div>
+            <div class="toolbar-right">
+              <button id="refreshBtn" type="button">再読込</button>
+              <button id="normalizeBtn" type="button">順番詰め</button>
+            </div>
+          </div>
+
+          <div class="summary-strip" id="summaryStrip">
+            <div class="summary-box"><span>総数</span><strong id="sumTotal">0</strong></div>
+            <div class="summary-box"><span>有効</span><strong id="sumActive">0</strong></div>
+            <div class="summary-box"><span>スキップ</span><strong id="sumSkipped">0</strong></div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>順</th>
+                  <th>ゼッケン</th>
+                  <th>選手名</th>
+                  <th>かな</th>
+                  <th>車番</th>
+                  <th>状態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="entriesBody">
+                <tr>
+                  <td colspan="7" class="empty-cell">読み込み中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/entries.js?v=1.0.0" defer></script>
+</body>
+</html>

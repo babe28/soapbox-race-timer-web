@@ -1,0 +1,35 @@
+{
+  "header": {
+    "eventName": "SOAP BOX DERBY 2026",
+    "heat": 3,
+    "status": "RUNNING",
+    "lastUpdate": "10:23:14",
+    "clock": "10:23:22",
+    "overallBestMs": 27523
+  },
+  "settings": {
+    "rowsPerPage": 20,
+    "showSplit": true
+  },
+  "nowRunning": "No.22 SATO YU",
+  "next": "No.23 ITO KAI",
+  "connection": {
+    "connected": true
+  },
+  "rows": [
+    {"rank": 1, "bibNo": 21, "name": "TAKEDA RYO", "kana": "たけだ りょう", "carNo": "A12", "practiceGoalMs": 28102, "r1SplitMs": 10123, "r1GoalMs": 27523, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 27523, "bestMarked": true, "highlight": true},
+    {"rank": 2, "bibNo": 17, "name": "SUZUKI HINATA", "kana": "すずき ひなた", "carNo": "B07", "practiceGoalMs": 28211, "r1SplitMs": 10288, "r1GoalMs": 27881, "r2SplitMs": 10199, "r2GoalMs": 27714, "bestMs": 27714, "bestMarked": true},
+    {"rank": 3, "bibNo": 9, "name": "ANDO REN", "kana": "あんどう れん", "carNo": "C03", "practiceGoalMs": 28640, "r1SplitMs": 10355, "r1GoalMs": 27952, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 27952},
+    {"rank": 4, "bibNo": 12, "name": "YAMADA AOI", "kana": "やまだ あおい", "carNo": "A08", "practiceGoalMs": 28724, "r1SplitMs": 10407, "r1GoalMs": 28065, "r2SplitMs": 10302, "r2GoalMs": 28011, "bestMs": 28011, "bestMarked": true},
+    {"rank": 5, "bibNo": 5, "name": "KOBAYASHI SORA", "kana": "こばやし そら", "carNo": "B11", "practiceGoalMs": 28920, "r1SplitMs": 10502, "r1GoalMs": 28211, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28211},
+    {"rank": 6, "bibNo": 14, "name": "SATO YU", "kana": "さとう ゆう", "carNo": "D04", "practiceGoalMs": 29014, "r1SplitMs": 10555, "r1GoalMs": 28319, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28319},
+    {"rank": 7, "bibNo": 11, "name": "ITO KAI", "kana": "いとう かい", "carNo": "D01", "practiceGoalMs": 29110, "r1SplitMs": 10611, "r1GoalMs": 28404, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28404},
+    {"rank": 8, "bibNo": 26, "name": "NAKAMURA REI", "kana": "なかむら れい", "carNo": "A19", "practiceGoalMs": 29308, "r1SplitMs": 10722, "r1GoalMs": 28572, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28572},
+    {"rank": 9, "bibNo": 31, "name": "MORITA YUTO", "kana": "もりた ゆうと", "carNo": "C10", "practiceGoalMs": 29401, "r1SplitMs": 10780, "r1GoalMs": 28641, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28641},
+    {"rank": 10, "bibNo": 8, "name": "HAYASHI RIN", "kana": "はやし りん", "carNo": "B14", "practiceGoalMs": 29512, "r1SplitMs": 10840, "r1GoalMs": 28720, "r2SplitMs": null, "r2GoalMs": null, "bestMs": 28720},
+    {"rank": null, "bibNo": 22, "name": "SATO YU", "kana": "さとう ゆう", "carNo": "A03", "practiceGoalMs": 28990, "r1SplitMs": null, "r1GoalMs": null, "r2SplitMs": null, "r2GoalMs": null, "bestMs": null},
+    {"rank": null, "bibNo": 23, "name": "ITO KAI", "kana": "いとう かい", "carNo": "A03", "practiceGoalMs": 29150, "r1SplitMs": null, "r1GoalMs": null, "r2SplitMs": null, "r2GoalMs": null, "bestMs": null},
+    {"rank": null, "bibNo": 24, "name": "ANDO REN", "kana": "あんどう れん", "carNo": "B02", "practiceGoalMs": 29080, "r1SplitMs": null, "r1GoalMs": null, "r2SplitMs": null, "r2GoalMs": null, "bestMs": null},
+    {"rank": null, "bibNo": 25, "name": "YAMADA AOI", "kana": "やまだ あおい", "carNo": "B02", "practiceGoalMs": 29220, "r1SplitMs": null, "r1GoalMs": null, "r2SplitMs": null, "r2GoalMs": null, "bestMs": null}
+  ]
+}

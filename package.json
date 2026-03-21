@@ -1,0 +1,19 @@
+{
+  "name": "soapbox-timer-skeleton",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Soap Box Derby result display and race control server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0",
+    "ws": "^8.18.1"
+  }
+}
