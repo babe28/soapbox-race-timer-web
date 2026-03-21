@@ -3,7 +3,7 @@ const settingsEls = {};
 document.addEventListener('DOMContentLoaded', () => {
   bindSettingsElements();
   bindSettingsEvents();
-  loadSettings();
+  loadAll();
 });
 
 function bindSettingsElements() {
@@ -23,14 +23,26 @@ function bindSettingsElements() {
   settingsEls.showEffects = document.getElementById('showEffects');
   settingsEls.memoTitle = document.getElementById('memoTitle');
   settingsEls.currentSettings = document.getElementById('currentSettings');
+  settingsEls.auditLogs = document.getElementById('auditLogs');
+  settingsEls.apiCatalog = document.getElementById('apiCatalog');
   settingsEls.reloadSettingsBtn = document.getElementById('reloadSettingsBtn');
   settingsEls.resetDbBtn = document.getElementById('resetDbBtn');
+  settingsEls.exportCsvBtn = document.getElementById('exportCsvBtn');
+  settingsEls.reloadLogsBtn = document.getElementById('reloadLogsBtn');
+  settingsEls.reloadApisBtn = document.getElementById('reloadApisBtn');
 }
 
 function bindSettingsEvents() {
   settingsEls.form?.addEventListener('submit', saveSettings);
   settingsEls.reloadSettingsBtn?.addEventListener('click', loadSettings);
   settingsEls.resetDbBtn?.addEventListener('click', resetDatabase);
+  settingsEls.exportCsvBtn?.addEventListener('click', exportCsv);
+  settingsEls.reloadLogsBtn?.addEventListener('click', loadAuditLogs);
+  settingsEls.reloadApisBtn?.addEventListener('click', loadApiCatalog);
+}
+
+async function loadAll() {
+  await Promise.all([loadSettings(), loadAuditLogs(), loadApiCatalog()]);
 }
 
 async function loadSettings() {
@@ -123,10 +135,37 @@ async function resetDatabase() {
     }
     applySettingsToForm(data.settings || {});
     renderCurrentSettings(data.settings || {});
+    await loadAuditLogs();
     alert('Database initialized');
   } catch (err) {
     console.error(err);
     alert('Failed to initialize database');
+  }
+}
+
+function exportCsv() {
+  window.location.href = '/api/settings/export/results.csv';
+}
+
+async function loadAuditLogs() {
+  try {
+    const res = await fetch('/api/settings/logs?limit=100', { cache: 'no-store' });
+    const data = await res.json();
+    renderAuditLogs(data || []);
+  } catch (err) {
+    console.error(err);
+    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>Failed to load logs</span></div>';
+  }
+}
+
+async function loadApiCatalog() {
+  try {
+    const res = await fetch('/api/settings/apis', { cache: 'no-store' });
+    const data = await res.json();
+    renderApiCatalog(data || []);
+  } catch (err) {
+    console.error(err);
+    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>Failed to load API catalog</span></div>';
   }
 }
 
@@ -153,6 +192,34 @@ function renderCurrentSettings(data) {
     <div class="current-row">
       <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(String(value))}</strong>
+    </div>
+  `).join('');
+}
+
+function renderAuditLogs(rows) {
+  if (!rows.length) {
+    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>No audit logs yet</span></div>';
+    return;
+  }
+
+  settingsEls.auditLogs.innerHTML = rows.map((row) => `
+    <div class="log-row">
+      <strong>${escapeHtml(row.action_type)} / ${escapeHtml(row.target_type)} #${escapeHtml(String(row.target_id ?? '-'))}</strong>
+      <span>${escapeHtml(row.created_at || '-')}</span>
+    </div>
+  `).join('');
+}
+
+function renderApiCatalog(rows) {
+  if (!rows.length) {
+    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>No APIs found</span></div>';
+    return;
+  }
+
+  settingsEls.apiCatalog.innerHTML = rows.map((row) => `
+    <div class="api-row">
+      <strong><span class="api-method">${escapeHtml(row.method)}</span> <code>${escapeHtml(row.path)}</code></strong>
+      <span>${escapeHtml(row.description || '')}</span>
     </div>
   `).join('');
 }

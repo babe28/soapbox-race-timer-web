@@ -74,6 +74,11 @@
   width: auto;
   margin: 0;
 }
+.danger-button {
+  background: rgba(255, 106, 125, 0.18);
+  border-color: rgba(255, 106, 125, 0.5);
+  color: #ffd9df;
+}
 .current-settings {
   display: grid;
   gap: 10px;
@@ -92,6 +97,48 @@
 }
 .current-row strong {
   text-align: right;
+}
+.log-list,
+.api-list {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow: auto;
+}
+.log-row,
+.api-row {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0c1426;
+}
+.log-row strong,
+.api-row strong {
+  font-size: 13px;
+}
+.log-row span,
+.api-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.api-method {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #061220;
+  background: #7ce7ff;
+}
+.api-row code {
+  font-size: 12px;
+  color: #eef3ff;
 }
 @media (max-width: 1100px) {
   .settings-grid {

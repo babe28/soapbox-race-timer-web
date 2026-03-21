@@ -77,7 +77,7 @@
             <div class="button-row action-row full-width">
               <button type="submit" class="primary">Save</button>
               <button id="reloadSettingsBtn" type="button">Reload</button>
-              <button id="resetDbBtn" type="button">Initialize Database</button>
+              <button id="resetDbBtn" type="button" class="danger-button">Initialize Database</button>
             </div>
           </form>
         </div>
@@ -87,6 +87,26 @@
         <div class="panel-section">
           <div class="section-title">Current Settings</div>
           <div class="current-settings" id="currentSettings"></div>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">Tools</div>
+          <div class="button-grid">
+            <button id="exportCsvBtn" type="button" class="primary">Export CSV</button>
+            <button id="reloadLogsBtn" type="button">Reload Logs</button>
+            <button id="reloadApisBtn" type="button">Reload API List</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">Audit Logs</div>
+          <div class="log-list" id="auditLogs">
+            <div class="log-row"><span>Loading...</span></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">API Catalog</div>
+          <div class="api-list" id="apiCatalog">
+            <div class="api-row"><span>Loading...</span></div>
+          </div>
         </div>
       </section>
     </main>

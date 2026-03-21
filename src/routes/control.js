@@ -1,5 +1,6 @@
 const express = require('express');
 const { getControlState } = require('../services/displayService');
+const { logAudit } = require('../services/auditService');
 
 function getNextAvailableEntryId(db, excludedIds = []) {
   const ids = excludedIds.filter((id) => Number.isInteger(id) && id > 0);
@@ -57,6 +58,7 @@ function createControlRouter(db, wsHub) {
 
   router.post('/action/set-now', (req, res) => {
     const entryId = req.body.entryId || null;
+    const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     const nextId = getFollowingAvailableEntryId(db, entryId, [entryId]);
     db.prepare(`
       UPDATE display_state SET
@@ -65,19 +67,37 @@ function createControlRouter(db, wsHub) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(entryId, nextId);
+    const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+    logAudit(db, {
+      actionType: 'set_now_running',
+      targetType: 'display_state',
+      targetId: 1,
+      before,
+      after,
+    });
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
   });
 
   router.post('/action/set-next', (req, res) => {
+    const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     db.prepare('UPDATE display_state SET next_entry_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(req.body.entryId || null);
+    const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+    logAudit(db, {
+      actionType: 'set_next',
+      targetType: 'display_state',
+      targetId: 1,
+      before,
+      after,
+    });
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
   });
 
   router.post('/action/move-next', (_req, res) => {
+    const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
     const newNowId = state?.next_entry_id || getNextAvailableEntryId(db, []);
     const newNextId = getFollowingAvailableEntryId(db, newNowId, [newNowId]);
@@ -89,6 +109,14 @@ function createControlRouter(db, wsHub) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(newNowId, newNextId);
+    const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+    logAudit(db, {
+      actionType: 'set_now_running',
+      targetType: 'display_state',
+      targetId: 1,
+      before,
+      after,
+    });
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
@@ -96,6 +124,7 @@ function createControlRouter(db, wsHub) {
 
   router.post('/action/skip', (req, res) => {
     const entryId = Number(req.body.entryId);
+    const beforeEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(entryId);
     db.prepare('UPDATE entries SET is_skipped = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(entryId);
 
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
@@ -109,11 +138,20 @@ function createControlRouter(db, wsHub) {
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
+    const afterEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(entryId);
+    logAudit(db, {
+      actionType: 'skip_entry',
+      targetType: 'entry',
+      targetId: entryId,
+      before: beforeEntry,
+      after: afterEntry,
+    });
     res.json({ ok: true, nextEntryId: nextId });
   });
 
   router.post('/action/unskip', (req, res) => {
     const entryId = Number(req.body.entryId);
+    const beforeEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(entryId);
     db.prepare('UPDATE entries SET is_skipped = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(entryId);
 
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
@@ -124,11 +162,28 @@ function createControlRouter(db, wsHub) {
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
+    const afterEntry = db.prepare('SELECT * FROM entries WHERE id = ?').get(entryId);
+    logAudit(db, {
+      actionType: 'unskip_entry',
+      targetType: 'entry',
+      targetId: entryId,
+      before: beforeEntry,
+      after: afterEntry,
+    });
     res.json({ ok: true });
   });
 
   router.post('/action/status', (req, res) => {
+    const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     db.prepare('UPDATE display_state SET current_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(req.body.status);
+    const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+    logAudit(db, {
+      actionType: 'change_status',
+      targetType: 'display_state',
+      targetId: 1,
+      before,
+      after,
+    });
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });

@@ -1,5 +1,6 @@
 const express = require('express');
 const { validateRunPayload } = require('../services/validation');
+const { logAudit } = require('../services/auditService');
 
 function createRunsRouter(db, wsHub) {
   const router = express.Router();
@@ -47,6 +48,12 @@ function createRunsRouter(db, wsHub) {
     db.prepare('UPDATE display_state SET last_update_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run();
 
     const row = db.prepare('SELECT * FROM runs WHERE id = ?').get(info.lastInsertRowid);
+    logAudit(db, {
+      actionType: 'create_run',
+      targetType: 'run',
+      targetId: row.id,
+      after: row,
+    });
     wsHub.broadcast('run_updated');
     wsHub.broadcast('display_update');
     res.status(201).json(row);
@@ -85,6 +92,13 @@ function createRunsRouter(db, wsHub) {
     db.prepare('UPDATE display_state SET last_update_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run();
 
     const row = db.prepare('SELECT * FROM runs WHERE id = ?').get(id);
+    logAudit(db, {
+      actionType: 'update_run',
+      targetType: 'run',
+      targetId: row.id,
+      before: current,
+      after: row,
+    });
     wsHub.broadcast('run_updated');
     wsHub.broadcast('display_update');
     res.json(row);
