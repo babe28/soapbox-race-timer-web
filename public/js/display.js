@@ -158,15 +158,18 @@
   function setCell(tr, name, value, extraClass = '', toneClass = '') {
     const td = tr.querySelector(`[data-cell="${name}"]`);
     if (!td) return;
-    td.textContent = value;
-    td.classList.toggle('time-entered', extraClass === 'time-entered');
-    td.classList.toggle('time-best', extraClass === 'time-best');
+
     if (name === 'status') {
       const flag = td.querySelector('.status-flag');
       if (!flag) return;
       flag.textContent = value;
       flag.className = `status-flag ${toneClass || 'status-empty'}`.trim();
+      return;
     }
+
+    td.textContent = value;
+    td.classList.toggle('time-entered', extraClass === 'time-entered');
+    td.classList.toggle('time-best', extraClass === 'time-best');
   }
 
   function enteredClass(updatedAt) {
