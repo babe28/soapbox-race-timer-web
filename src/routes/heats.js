@@ -5,7 +5,7 @@ function createHeatsRouter(db, wsHub) {
   const router = express.Router();
 
   router.get('/', (_req, res) => {
-    const rows = db.prepare('SELECT * FROM heats ORDER BY COALESCE(code, ""), heat_no ASC, id ASC').all();
+    const rows = db.prepare("SELECT * FROM heats ORDER BY COALESCE(code, ''), heat_no ASC, id ASC").all();
     res.json(rows);
   });
 
