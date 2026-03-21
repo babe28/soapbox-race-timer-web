@@ -37,7 +37,7 @@ async function loadSettings() {
     renderCurrentSettings(data);
   } catch (err) {
     console.error(err);
-    alert('Settings の読み込みに失敗しました');
+    alert('Failed to load settings');
   }
 }
 
@@ -89,33 +89,33 @@ async function saveSettings(event) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || '保存に失敗しました');
+      alert(data.error || 'Failed to save settings');
       return;
     }
     applySettingsToForm(data);
     renderCurrentSettings(data);
-    alert('設定を保存しました');
+    alert('Settings saved');
   } catch (err) {
     console.error(err);
-    alert('設定の保存に失敗しました');
+    alert('Failed to save settings');
   }
 }
 
 function renderCurrentSettings(data) {
   const rows = [
-    ['イベント名', data.eventName ?? ''],
-    ['クラス名', data.className ?? ''],
-    ['言語', data.language ?? ''],
-    ['表示行数', `${data.rowsPerPage ?? 20} 行`],
-    ['かな表示', boolText(data.showKana)],
-    ['車番表示', boolText(data.showCarNo)],
-    ['練習タイム表示', boolText(data.showPractice)],
-    ['中間タイム表示', boolText(data.showSplit)],
-    ['時計表示', boolText(data.showClock)],
-    ['更新時刻表示', boolText(data.showLastUpdate)],
-    ['全体ベスト表示', boolText(data.showOverallBest)],
-    ['演出表示', boolText(data.showEffects)],
-    ['自動バックアップ', `${data.autoBackupIntervalMin ?? 5} 分`],
+    ['Event Name', data.eventName ?? ''],
+    ['Class Name', data.className ?? ''],
+    ['Language', data.language ?? ''],
+    ['Rows Per Page', `${data.rowsPerPage ?? 20}`],
+    ['Show Kana', boolText(data.showKana)],
+    ['Show Car No', boolText(data.showCarNo)],
+    ['Show Practice', boolText(data.showPractice)],
+    ['Show Split', boolText(data.showSplit)],
+    ['Show Clock', boolText(data.showClock)],
+    ['Show Last Update', boolText(data.showLastUpdate)],
+    ['Show Overall Best', boolText(data.showOverallBest)],
+    ['Show Effects', boolText(data.showEffects)],
+    ['Auto Backup Interval', `${data.autoBackupIntervalMin ?? 5} min`],
   ];
 
   settingsEls.currentSettings.innerHTML = rows.map(([label, value]) => `

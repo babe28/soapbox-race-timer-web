@@ -1,4 +1,5 @@
 const express = require('express');
+const { validateRunPayload } = require('../services/validation');
 
 function createRunsRouter(db, wsHub) {
   const router = express.Router();
@@ -14,12 +15,8 @@ function createRunsRouter(db, wsHub) {
 
   router.post('/', (req, res) => {
     const body = req.body || {};
-    if (!body.entryId) {
-      return res.status(400).json({ error: 'entryId is required' });
-    }
-    if (!body.runType) {
-      return res.status(400).json({ error: 'runType is required' });
-    }    
+    const validationError = validateRunPayload(body);
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const info = db.prepare(`
       INSERT INTO runs (
@@ -40,7 +37,9 @@ function createRunsRouter(db, wsHub) {
       split_ms: body.splitMs ?? null,
       goal_ms: body.goalMs ?? null,
       status: body.status || 'pending',
-      valid_for_ranking: Number(Boolean(body.validForRanking)),
+      valid_for_ranking: body.runType === 'practice'
+        ? 0
+        : Number(body.validForRanking === undefined ? true : Boolean(body.validForRanking)),
       valid_for_display: body.validForDisplay === undefined ? 1 : Number(Boolean(body.validForDisplay)),
       note: body.note || null,
     });
@@ -58,6 +57,14 @@ function createRunsRouter(db, wsHub) {
     const current = db.prepare('SELECT * FROM runs WHERE id = ?').get(id);
     if (!current) return res.status(404).json({ error: 'Run not found' });
     const body = req.body || {};
+    const validationError = validateRunPayload({
+      entryId: current.entry_id,
+      runType: current.run_type,
+      status: body.status ?? current.status,
+      splitMs: body.splitMs ?? current.split_ms,
+      goalMs: body.goalMs ?? current.goal_ms,
+    }, { partial: true });
+    if (validationError) return res.status(400).json({ error: validationError });
 
     db.prepare(`
       UPDATE runs SET
@@ -81,6 +88,19 @@ function createRunsRouter(db, wsHub) {
     wsHub.broadcast('run_updated');
     wsHub.broadcast('display_update');
     res.json(row);
+  });
+
+  router.delete('/:id', (req, res) => {
+    const id = Number(req.params.id);
+    const current = db.prepare('SELECT * FROM runs WHERE id = ?').get(id);
+    if (!current) return res.status(404).json({ error: 'Run not found' });
+
+    db.prepare('DELETE FROM runs WHERE id = ?').run(id);
+    db.prepare('UPDATE display_state SET last_update_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run();
+
+    wsHub.broadcast('run_updated');
+    wsHub.broadcast('display_update');
+    res.json({ ok: true });
   });
 
   router.post('/rerun', (req, res) => {

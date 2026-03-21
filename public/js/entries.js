@@ -1,13 +1,15 @@
 let entries = [];
 let filteredEntries = [];
 let editingId = null;
+let heats = [];
+let currentHeatId = null;
 
 const els = {};
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   bindElements();
   bindEvents();
-  loadEntries();
+  await Promise.all([loadEntries(), loadHeats()]);
 });
 
 function bindElements() {
@@ -21,6 +23,11 @@ function bindElements() {
   els.effectiveOrder = document.getElementById('effectiveOrder');
   els.memo = document.getElementById('memo');
   els.entriesBody = document.getElementById('entriesBody');
+  els.currentHeatId = document.getElementById('currentHeatId');
+  els.heatCode = document.getElementById('heatCode');
+  els.heatTitle = document.getElementById('heatTitle');
+  els.selectHeatBtn = document.getElementById('selectHeatBtn');
+  els.saveHeatBtn = document.getElementById('saveHeatBtn');
   els.searchInput = document.getElementById('searchInput');
   els.refreshBtn = document.getElementById('refreshBtn');
   els.normalizeBtn = document.getElementById('normalizeBtn');
@@ -35,6 +42,8 @@ function bindEvents() {
   els.refreshBtn?.addEventListener('click', () => loadEntries());
   els.resetEntryBtn?.addEventListener('click', resetForm);
   els.normalizeBtn?.addEventListener('click', normalizeOrders);
+  els.selectHeatBtn?.addEventListener('click', selectCurrentHeat);
+  els.saveHeatBtn?.addEventListener('click', saveHeat);
   els.searchInput?.addEventListener('input', applyFilterAndRender);
   els.entriesBody?.addEventListener('click', onTableClick);
 }
@@ -48,8 +57,35 @@ async function loadEntries() {
     if (!editingId) autofillNextOrder();
   } catch (err) {
     console.error(err);
-    alert('Entries の読み込みに失敗しました');
+    alert('Failed to load entries');
   }
+}
+
+async function loadHeats() {
+  try {
+    const [heatsRes, controlRes] = await Promise.all([
+      fetch('/api/heats', { cache: 'no-store' }),
+      fetch('/api/control/state', { cache: 'no-store' }),
+    ]);
+    heats = await heatsRes.json();
+    const control = await controlRes.json();
+    currentHeatId = control.heatId ?? null;
+    renderHeatOptions();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to load heats');
+  }
+}
+
+function renderHeatOptions() {
+  if (!els.currentHeatId) return;
+  const options = ['<option value="">-</option>'];
+  for (const heat of heats) {
+    const label = [heat.code || heat.heat_no || '-', heat.title].filter(Boolean).join(' / ');
+    options.push(`<option value="${heat.id}">${escapeHtml(label)}</option>`);
+  }
+  els.currentHeatId.innerHTML = options.join('');
+  els.currentHeatId.value = currentHeatId ? String(currentHeatId) : '';
 }
 
 function applyFilterAndRender() {
@@ -75,7 +111,7 @@ function renderSummary() {
 
 function renderTable() {
   if (!filteredEntries.length) {
-    els.entriesBody.innerHTML = '<tr><td colspan="7" class="empty-cell">該当データがありません</td></tr>';
+    els.entriesBody.innerHTML = '<tr><td colspan="7" class="empty-cell">No entries found</td></tr>';
     return;
   }
 
@@ -91,9 +127,9 @@ function renderTable() {
         <td>${escapeHtml(row.car_no ?? '')}</td>
         <td><span class="status-pill">${skipped ? 'SKIP' : 'READY'}</span></td>
         <td class="actions-cell">
-          <button type="button" class="table-btn" data-action="edit">編集</button>
-          <button type="button" class="table-btn" data-action="toggle-skip">${skipped ? '復帰' : 'スキップ'}</button>
-          <button type="button" class="table-btn warn" data-action="delete">削除</button>
+          <button type="button" class="table-btn" data-action="edit">Edit</button>
+          <button type="button" class="table-btn" data-action="toggle-skip">${skipped ? 'Undo' : 'Skip'}</button>
+          <button type="button" class="table-btn warn" data-action="delete">Delete</button>
         </td>
       </tr>
     `;
@@ -117,25 +153,25 @@ async function onSubmit(event) {
   };
 
   if (!Number.isInteger(payload.bibNo) || payload.bibNo <= 0) {
-    alert('ゼッケン番号を入力してください');
+    alert('Bib No must be a positive integer');
     return;
   }
   if (!payload.name) {
-    alert('選手名を入力してください');
+    alert('Name is required');
     return;
   }
   if (!Number.isInteger(payload.startOrder) || payload.startOrder <= 0) {
-    alert('スタート順を入力してください');
+    alert('Start Order is required');
     return;
   }
   if (!Number.isInteger(payload.effectiveOrder) || payload.effectiveOrder <= 0) {
-    alert('現在順を入力してください');
+    alert('Display Order is required');
     return;
   }
 
   const duplicateBib = entries.find((row) => Number(row.bib_no) === payload.bibNo && Number(row.id) !== Number(editingId));
   if (duplicateBib) {
-    alert('同じゼッケン番号が既に登録されています');
+    alert('Duplicate Bib No');
     return;
   }
 
@@ -150,14 +186,14 @@ async function onSubmit(event) {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(json.error || '保存に失敗しました');
+      alert(json.error || 'Failed to save entry');
       return;
     }
     resetForm();
     await loadEntries();
   } catch (err) {
     console.error(err);
-    alert('保存に失敗しました');
+    alert('Failed to save entry');
   }
 }
 
@@ -213,28 +249,28 @@ async function toggleSkip(id) {
     await loadEntries();
   } catch (err) {
     console.error(err);
-    alert('スキップ状態の更新に失敗しました');
+    alert('Failed to update skip state');
   }
 }
 
 async function deleteEntry(id) {
   const row = entries.find((entry) => Number(entry.id) === Number(id));
   if (!row) return;
-  const ok = window.confirm(`ゼッケン ${row.bib_no} / ${row.name} を削除しますか？`);
+  const ok = window.confirm(`Delete entry ${row.bib_no} / ${row.name}?`);
   if (!ok) return;
 
   try {
     const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(json.error || '削除に失敗しました');
+      alert(json.error || 'Failed to delete entry');
       return;
     }
     if (Number(editingId) === Number(id)) resetForm();
     await loadEntries();
   } catch (err) {
     console.error(err);
-    alert('削除に失敗しました');
+    alert('Failed to delete entry');
   }
 }
 
@@ -257,7 +293,64 @@ async function normalizeOrders() {
     await loadEntries();
   } catch (err) {
     console.error(err);
-    alert('順番詰めに失敗しました');
+    alert('Failed to normalize orders');
+  }
+}
+
+async function selectCurrentHeat() {
+  const heatId = Number(els.currentHeatId.value);
+  if (!heatId) {
+    alert('Select a heat first');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/heats/current/${heatId}`, { method: 'PUT' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(json.error || 'Failed to select heat');
+      return;
+    }
+    currentHeatId = heatId;
+    renderHeatOptions();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to select heat');
+  }
+}
+
+async function saveHeat() {
+  const code = String(els.heatCode.value || '').trim().toUpperCase();
+  const title = normalizeEmpty(els.heatTitle.value);
+
+  if (!/^[A-Z0-9]{1,2}$/.test(code)) {
+    alert('Heat Code must be 1-2 alphanumeric characters');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/heats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        title,
+        heatNo: heats.length + 1,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(json.error || 'Failed to add heat');
+      return;
+    }
+    els.heatCode.value = '';
+    els.heatTitle.value = '';
+    await loadHeats();
+    els.currentHeatId.value = String(json.id);
+    await selectCurrentHeat();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to add heat');
   }
 }
 

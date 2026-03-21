@@ -11,27 +11,27 @@
   <div class="display-shell" id="displayApp">
     <header class="display-header">
       <div class="header-block header-event">
-        <div class="label">Event</div>
+        <div class="label" id="labelEvent">Event</div>
         <div class="value" id="eventName">SOAP BOX DERBY</div>
       </div>
       <div class="header-block">
-        <div class="label">Heat</div>
+        <div class="label" id="labelHeat">Heat</div>
         <div class="value" id="heatNo">HEAT 1</div>
       </div>
       <div class="header-block status-block">
-        <div class="label">Status</div>
+        <div class="label" id="labelStatus">Status</div>
         <div class="value status-value" id="statusText">RUNNING</div>
       </div>
       <div class="header-block">
-        <div class="label">Last Update</div>
+        <div class="label" id="labelLastUpdate">Last Update</div>
         <div class="value" id="lastUpdate">10:23:14</div>
       </div>
       <div class="header-block">
-        <div class="label">Clock</div>
+        <div class="label" id="labelClock">Clock</div>
         <div class="value" id="clockText">10:23:22</div>
       </div>
       <div class="header-block best-block">
-        <div class="label">Overall Best</div>
+        <div class="label" id="labelOverallBest">Overall Best</div>
         <div class="value best-value" id="overallBest">27.523</div>
       </div>
     </header>
@@ -40,17 +40,17 @@
       <table class="results-table" id="resultsTable">
         <thead>
           <tr>
-            <th class="col-pos">Pos</th>
-            <th class="col-no">No</th>
-            <th class="col-name">Name</th>
-            <th class="col-kana">Kana</th>
-            <th class="col-car">Car</th>
-            <th class="col-practice">Practice</th>
-            <th class="col-split split-col">R1-Sec</th>
-            <th class="col-goal">R1-Goal</th>
-            <th class="col-split split-col">R2-Sec</th>
-            <th class="col-goal">R2-Goal</th>
-            <th class="col-best">Best</th>
+            <th class="col-pos" id="thPos">Pos</th>
+            <th class="col-no" id="thNo">No</th>
+            <th class="col-name" id="thName">Name</th>
+            <th class="col-kana" id="thKana">Kana</th>
+            <th class="col-car" id="thCar">Car</th>
+            <th class="col-practice" id="thPractice">Practice</th>
+            <th class="col-split split-col race-col" id="thR1Split">R1-Sec</th>
+            <th class="col-goal race-col" id="thR1Goal">R1-Goal</th>
+            <th class="col-split split-col race-col" id="thR2Split">R2-Sec</th>
+            <th class="col-goal race-col" id="thR2Goal">R2-Goal</th>
+            <th class="col-best race-col" id="thBest">Best</th>
           </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
@@ -59,15 +59,15 @@
 
     <footer class="display-footer">
       <div class="footer-block now-running">
-        <span class="footer-label">Now Running</span>
+        <span class="footer-label" id="labelNowRunning">Now Running</span>
         <span class="footer-value" id="nowRunning">No.21 TAKEDA RYO</span>
       </div>
       <div class="footer-block next-running">
-        <span class="footer-label">Next</span>
+        <span class="footer-label" id="labelNext">Next</span>
         <span class="footer-value" id="nextRunning">No.22 SATO YU</span>
       </div>
       <div class="footer-block connection-block">
-        <span class="footer-label">Connection</span>
+        <span class="footer-label" id="labelConnection">Connection</span>
         <span class="footer-value connection-ok" id="connectionState">CONNECTED</span>
       </div>
     </footer>

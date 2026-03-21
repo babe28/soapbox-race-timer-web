@@ -35,6 +35,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.heat-form {
+  margin-bottom: 18px;
+}
 .full-width {
   grid-column: 1 / -1;
 }

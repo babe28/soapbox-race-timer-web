@@ -37,26 +37,26 @@ function bindEvents() {
   });
 
   document.getElementById('setNowBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('選手が選択されていません');
+    if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/set-now', { entryId: selectedEntry.id });
     await loadControlState();
   });
 
   document.getElementById('setNextBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('選手が選択されていません');
+    if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/set-next', { entryId: selectedEntry.id });
     await loadControlState();
   });
 
   document.getElementById('skipNextBtn')?.addEventListener('click', async () => {
     const entry = controlState?.nextEntry || selectedEntry;
-    if (!entry?.id) return alert('スキップ対象がありません');
+    if (!entry?.id) return alert('No entry to skip');
     await postJson('/api/control/action/skip', { entryId: entry.id });
     await loadControlState();
   });
 
   document.getElementById('unskipBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('選手が選択されていません');
+    if (!selectedEntry?.id) return alert('Select an entry first');
     await postJson('/api/control/action/unskip', { entryId: selectedEntry.id });
     await loadControlState();
   });
@@ -69,6 +69,7 @@ function bindEvents() {
   });
 
   document.getElementById('entrySearch')?.addEventListener('input', renderQueueList);
+  document.getElementById('historyBody')?.addEventListener('click', onHistoryClick);
 }
 
 async function postJson(url, body) {
@@ -110,7 +111,7 @@ async function loadControlState() {
 
 function render(data) {
   document.getElementById('ctrlEventName').textContent = data.eventName ?? '-';
-  document.getElementById('ctrlHeatNo').textContent = data.heatNo ? `Heat ${data.heatNo}` : 'Heat -';
+  document.getElementById('ctrlHeatNo').textContent = data.heatNo ? String(data.heatNo) : '-';
   document.getElementById('ctrlStatus').textContent = String(data.status ?? '-').toUpperCase();
   document.getElementById('ctrlOverallBest').textContent = fmt(data.overallBest);
   document.getElementById('ctrlLastUpdate').textContent = data.lastUpdate ?? '-';
@@ -144,13 +145,15 @@ function setSelectedEntry(entry, fillForm = true) {
   document.getElementById('selOrder').textContent = `Order ${entry.order ?? entry.effectiveOrder ?? '-'}`;
 
   const knownRuns = controlState?.selectedEntryRuns && controlState?.selectedEntry?.id === entry.id
-      ? controlState.selectedEntryRuns
-      : null;
+    ? controlState.selectedEntryRuns
+    : null;
+
   if (knownRuns) {
     renderHistory(knownRuns);
   } else {
     loadEntryHistory(entry.id);
   }
+
   renderQueueList();
 
   if (fillForm) {
@@ -158,7 +161,6 @@ function setSelectedEntry(entry, fillForm = true) {
     if (carInput) carInput.value = entry.carNo ?? '';
   }
 }
-
 
 async function loadEntryHistory(entryId) {
   try {
@@ -188,19 +190,46 @@ function renderHistory(runs) {
   tbody.innerHTML = '';
 
   if (!runs.length) {
-    tbody.innerHTML = '<tr><td colspan="4">No runs yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">No runs yet</td></tr>';
     return;
   }
 
   for (const run of runs) {
     const tr = document.createElement('tr');
+    tr.dataset.runId = run.id;
     tr.innerHTML = `
       <td>${escapeHtml(labelRunType(run.run_type))}</td>
       <td>${escapeHtml(fmt(run.split_ms))}</td>
       <td>${escapeHtml(fmt(run.goal_ms))}</td>
       <td>${escapeHtml(String(run.status || '-').toUpperCase())}</td>
+      <td><button type="button" class="table-btn warn" data-action="delete-run">Delete</button></td>
     `;
     tbody.appendChild(tr);
+  }
+}
+
+async function onHistoryClick(event) {
+  const button = event.target.closest('button[data-action="delete-run"]');
+  if (!button) return;
+
+  const tr = event.target.closest('tr[data-run-id]');
+  if (!tr) return;
+
+  const runId = Number(tr.dataset.runId);
+  if (!runId) return;
+  if (!window.confirm('Delete this run?')) return;
+
+  try {
+    const res = await fetch(`/api/runs/${runId}`, { method: 'DELETE' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(json.error || 'Failed to delete run');
+      return;
+    }
+    await loadControlState();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to delete run');
   }
 }
 
@@ -212,9 +241,9 @@ function renderQueueList() {
   const keyword = (document.getElementById('entrySearch')?.value || '').trim().toLowerCase();
   const rows = (controlState?.queue || []).filter((row) => {
     if (!keyword) return true;
-    return String(row.bibNo).includes(keyword) ||
-      String(row.name || '').toLowerCase().includes(keyword) ||
-      String(row.kana || '').toLowerCase().includes(keyword);
+    return String(row.bibNo).includes(keyword)
+      || String(row.name || '').toLowerCase().includes(keyword)
+      || String(row.kana || '').toLowerCase().includes(keyword);
   });
 
   if (!rows.length) {
@@ -233,18 +262,35 @@ function renderQueueList() {
 }
 
 async function saveRun() {
-  if (!selectedEntry || !selectedEntry.id) {
-    alert('選手が選択されていません');
+  if (!selectedEntry?.id) {
+    alert('Select an entry first');
     return false;
   }
 
   const runType = document.getElementById('runType')?.value || 'race1';
+  const splitResult = parseTimeInput(document.getElementById('splitTime')?.value ?? '', 'Split Time');
+  if (splitResult.error) {
+    alert(splitResult.error);
+    return false;
+  }
+
+  const goalResult = parseTimeInput(document.getElementById('goalTime')?.value ?? '', 'Goal Time');
+  if (goalResult.error) {
+    alert(goalResult.error);
+    return false;
+  }
+
+  if (splitResult.ms !== null && goalResult.ms !== null && splitResult.ms > goalResult.ms) {
+    alert('Split Time must be less than or equal to Goal Time');
+    return false;
+  }
+
   const payload = {
     entryId: selectedEntry.id,
     heatId: controlState?.heatId ?? null,
     runType,
-    splitMs: parseTimeToMs(document.getElementById('splitTime')?.value ?? ''),
-    goalMs: parseTimeToMs(document.getElementById('goalTime')?.value ?? ''),
+    splitMs: splitResult.ms,
+    goalMs: goalResult.ms,
     status: document.getElementById('runStatus')?.value || 'finished',
     carNoAtRun: normalizeEmpty(document.getElementById('carNoAtRun')?.value),
     validForRanking: runType !== 'practice',
@@ -260,7 +306,7 @@ async function saveRun() {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    alert(json.error || '保存に失敗しました');
+    alert(json.error || 'Failed to save run');
     return false;
   }
 
@@ -285,16 +331,25 @@ function clearRunForm() {
   if (status) status.value = 'finished';
 }
 
-function parseTimeToMs(value) {
+function parseTimeInput(value, label) {
   const text = String(value || '').trim();
-  if (!text) return null;
+  if (!text) return { ms: null, error: null };
+  if (!/^\d+(?::[0-5]?\d)?(?:\.\d{1,3})?$/.test(text)) {
+    return { ms: null, error: `${label} must be ss.mmm or m:ss.mmm` };
+  }
   if (text.includes(':')) {
     const [m, rest] = text.split(':');
     const [s, ms = '0'] = String(rest || '').split('.');
-    return (Number(m) * 60 * 1000) + (Number(s) * 1000) + Number(String(ms).padEnd(3, '0').slice(0, 3));
+    return {
+      ms: (Number(m) * 60 * 1000) + (Number(s) * 1000) + Number(String(ms).padEnd(3, '0').slice(0, 3)),
+      error: null,
+    };
   }
   const [s, ms = '0'] = text.split('.');
-  return (Number(s) * 1000) + Number(String(ms).padEnd(3, '0').slice(0, 3));
+  return {
+    ms: (Number(s) * 1000) + Number(String(ms).padEnd(3, '0').slice(0, 3)),
+    error: null,
+  };
 }
 
 function normalizeEmpty(value) {

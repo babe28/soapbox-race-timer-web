@@ -18,8 +18,30 @@
   }
 
   function render(data) {
+    const labels = data.labels || {};
+    document.getElementById('labelEvent').textContent = labels.event || 'Event';
+    document.getElementById('labelHeat').textContent = labels.heat || 'Heat';
+    document.getElementById('labelStatus').textContent = labels.status || 'Status';
+    document.getElementById('labelLastUpdate').textContent = labels.lastUpdate || 'Last Update';
+    document.getElementById('labelClock').textContent = labels.clock || 'Clock';
+    document.getElementById('labelOverallBest').textContent = labels.overallBest || 'Overall Best';
+    document.getElementById('labelNowRunning').textContent = labels.nowRunning || 'Now Running';
+    document.getElementById('labelNext').textContent = labels.next || 'Next';
+    document.getElementById('labelConnection').textContent = labels.connection || 'Connection';
+    document.getElementById('thPos').textContent = labels.pos || 'Pos';
+    document.getElementById('thNo').textContent = labels.no || 'No';
+    document.getElementById('thName').textContent = labels.name || 'Name';
+    document.getElementById('thKana').textContent = labels.kana || 'Kana';
+    document.getElementById('thCar').textContent = labels.car || 'Car';
+    document.getElementById('thPractice').textContent = labels.practice || 'Practice';
+    document.getElementById('thR1Split').textContent = labels.r1Split || 'R1-Sec';
+    document.getElementById('thR1Goal').textContent = labels.r1Goal || 'R1-Goal';
+    document.getElementById('thR2Split').textContent = labels.r2Split || 'R2-Sec';
+    document.getElementById('thR2Goal').textContent = labels.r2Goal || 'R2-Goal';
+    document.getElementById('thBest').textContent = labels.best || 'Best';
+
     document.getElementById('eventName').textContent = data.header?.eventName || '-';
-    document.getElementById('heatNo').textContent = data.header?.heat ? `HEAT ${data.header.heat}` : 'HEAT -';
+    document.getElementById('heatNo').textContent = data.header?.heat ? String(data.header.heat) : '-';
     document.getElementById('statusText').textContent = data.header?.status || '-';
     document.getElementById('lastUpdate').textContent = data.header?.lastUpdate || '-';
     document.getElementById('clockText').textContent = data.header?.clock || '-';
@@ -34,6 +56,13 @@
 
     body.classList.toggle('mode-30', data.settings?.rowsPerPage === 30);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
+    body.classList.toggle('practice-only', data.mode === 'practice');
+    body.classList.toggle('hide-kana', !data.settings?.showKana);
+    body.classList.toggle('hide-car', !data.settings?.showCarNo);
+    body.classList.toggle('hide-practice', !data.settings?.showPractice && data.mode !== 'practice');
+    body.classList.toggle('hide-clock', !data.settings?.showClock);
+    body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
+    body.classList.toggle('hide-overall-best', !data.settings?.showOverallBest);
 
     const tbody = document.getElementById('resultsBody');
     tbody.innerHTML = '';
@@ -47,13 +76,13 @@
         <td>${escapeHtml(row.bibNo || '')}</td>
         <td class="cell-name">${escapeHtml(row.name || '')}</td>
         <td class="cell-kana">${escapeHtml(row.kana || '')}</td>
-        <td>${escapeHtml(row.carNo || '')}</td>
-        <td>${escapeHtml(row.practice || '--.---')}</td>
-        <td class="cell-split">${escapeHtml(row.r1?.split || '--.---')}</td>
-        <td>${escapeHtml(row.r1?.goal || '--.---')}</td>
-        <td class="cell-split">${escapeHtml(row.r2?.split || '--.---')}</td>
-        <td>${escapeHtml(row.r2?.goal || '--.---')}</td>
-        <td class="cell-best">${escapeHtml(row.best || '--.---')}</td>
+        <td class="cell-car">${escapeHtml(row.carNo || '')}</td>
+        <td class="cell-practice">${escapeHtml(row.practice || '--.---')}</td>
+        <td class="cell-split race-col">${escapeHtml(row.r1?.split || '--.---')}</td>
+        <td class="race-col">${escapeHtml(row.r1?.goal || '--.---')}</td>
+        <td class="cell-split race-col">${escapeHtml(row.r2?.split || '--.---')}</td>
+        <td class="race-col">${escapeHtml(row.r2?.goal || '--.---')}</td>
+        <td class="cell-best race-col">${escapeHtml(row.best || '--.---')}</td>
       `;
       tbody.appendChild(tr);
     }

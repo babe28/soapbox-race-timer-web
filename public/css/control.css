@@ -87,6 +87,10 @@
 .compact .info-item strong {
   font-size: 18px;
 }
+.mini-table .table-btn {
+  padding: 5px 8px;
+  font-size: 12px;
+}
 @media (max-width: 1400px) {
   .control-grid {
     grid-template-columns: 1fr;

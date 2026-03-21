@@ -140,3 +140,13 @@ body.mode-30 .results-table tbody td { font-size: 19px; padding: 8px 8px; }
 body.mode-30 .results-table .cell-kana { font-size: 15px; }
 body.hide-split .split-col,
 body.hide-split .cell-split { display: none; }
+body.hide-kana .col-kana,
+body.hide-kana .cell-kana { display: none; }
+body.hide-car .col-car,
+body.hide-car .cell-car { display: none; }
+body.hide-practice .col-practice,
+body.hide-practice .cell-practice { display: none; }
+body.practice-only .race-col { display: none; }
+body.hide-clock .display-header .header-block:nth-child(5) { display: none; }
+body.hide-last-update .display-header .header-block:nth-child(4) { display: none; }
+body.hide-overall-best .display-header .best-block { display: none; }

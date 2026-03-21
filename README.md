@@ -39,7 +39,7 @@ npm start
 - `HOST`
 - `DB_PATH`
 
-## Windowsでも動くか
+## Windowsでも動くようにした
 動きます。Node.js 20系以降が無難です。
 
 ### Windowsだけで始めるなら
@@ -52,14 +52,10 @@ npm start
 ### Linuxサーバーに移すなら
 - DBは `data/soapbox.db`
 - このプロジェクト一式をコピーすれば起動できます
-- 将来は systemd や PM2 で常駐させればよいです
+- 将来は systemd や PM2 で常駐したい
 
 ## API入口
 - `/api/health`
 - `/api/settings`
 - `/api/display/current`
 - `/api/control/state`
-
-## 注意
-この段階ではあくまで雛形です。
-フロント画面、CSV出力、認証、バリデーション強化は未実装です。

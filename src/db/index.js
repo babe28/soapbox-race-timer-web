@@ -20,6 +20,10 @@ function initDb(db) {
   const applySchema = db.transaction(() => {
     for (const sql of schemaStatements) db.exec(sql);
     for (const sql of seedStatements) db.exec(sql);
+    const heatColumns = db.prepare('PRAGMA table_info(heats)').all();
+    if (!heatColumns.some((column) => column.name === 'code')) {
+      db.exec('ALTER TABLE heats ADD COLUMN code TEXT');
+    }
   });
   applySchema();
 }

@@ -12,7 +12,7 @@
     <header class="page-header">
       <div>
         <h1>Settings</h1>
-        <p class="page-subtitle">表示画面の行数や表示項目を設定します。</p>
+        <p class="page-subtitle">Configure display behavior and language.</p>
       </div>
       <div class="header-actions">
         <a class="ghost-button" href="/entries.html">Entries / Edit</a>
@@ -24,20 +24,20 @@
     <main class="settings-grid">
       <section class="panel">
         <div class="panel-section">
-          <div class="section-title">基本情報</div>
+          <div class="section-title">Basic Settings</div>
           <form id="settingsForm" class="settings-form">
             <label>
-              <span>イベント名</span>
+              <span>Event Name</span>
               <input type="text" id="eventName" />
             </label>
 
             <label>
-              <span>クラス名</span>
+              <span>Class Name</span>
               <input type="text" id="className" />
             </label>
 
             <label>
-              <span>言語</span>
+              <span>Language</span>
               <select id="language">
                 <option value="ja">ja</option>
                 <option value="en">en</option>
@@ -45,32 +45,32 @@
             </label>
 
             <label>
-              <span>自動バックアップ間隔 (分)</span>
+              <span>Auto Backup Interval (min)</span>
               <input type="number" id="autoBackupIntervalMin" min="1" step="1" />
             </label>
 
-            <div class="section-title sub-section">情報表示画面</div>
+            <div class="section-title sub-section">Display Settings</div>
 
             <div class="radio-card-group full-width">
-              <span class="field-label">表示行数</span>
-              <label class="radio-card"><input type="radio" name="rowsPerPage" value="20" /> <span>20行</span></label>
-              <label class="radio-card"><input type="radio" name="rowsPerPage" value="30" /> <span>30行</span></label>
+              <span class="field-label">Rows Per Page</span>
+              <label class="radio-card"><input type="radio" name="rowsPerPage" value="20" /> <span>20 rows</span></label>
+              <label class="radio-card"><input type="radio" name="rowsPerPage" value="30" /> <span>30 rows</span></label>
             </div>
 
             <div class="check-grid full-width">
-              <label class="check-card"><input type="checkbox" id="showKana" /> <span>かな表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>車番表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showPractice" /> <span>練習タイム表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showSplit" /> <span>中間タイム表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showClock" /> <span>時計表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showLastUpdate" /> <span>更新時刻表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showOverallBest" /> <span>全体ベスト表示</span></label>
-              <label class="check-card"><input type="checkbox" id="showEffects" /> <span>演出表示</span></label>
+              <label class="check-card"><input type="checkbox" id="showKana" /> <span>Show Kana</span></label>
+              <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>Show Car No</span></label>
+              <label class="check-card"><input type="checkbox" id="showPractice" /> <span>Show Practice</span></label>
+              <label class="check-card"><input type="checkbox" id="showSplit" /> <span>Show Split</span></label>
+              <label class="check-card"><input type="checkbox" id="showClock" /> <span>Show Clock</span></label>
+              <label class="check-card"><input type="checkbox" id="showLastUpdate" /> <span>Show Last Update</span></label>
+              <label class="check-card"><input type="checkbox" id="showOverallBest" /> <span>Show Overall Best</span></label>
+              <label class="check-card"><input type="checkbox" id="showEffects" /> <span>Show Effects</span></label>
             </div>
 
             <div class="button-row action-row full-width">
-              <button type="submit" class="primary">保存</button>
-              <button id="reloadSettingsBtn" type="button">再読込</button>
+              <button type="submit" class="primary">Save</button>
+              <button id="reloadSettingsBtn" type="button">Reload</button>
             </div>
           </form>
         </div>
@@ -78,7 +78,7 @@
 
       <section class="panel">
         <div class="panel-section">
-          <div class="section-title">現在の設定</div>
+          <div class="section-title">Current Settings</div>
           <div class="current-settings" id="currentSettings"></div>
         </div>
       </section>
