@@ -83,6 +83,8 @@
               <input type="number" id="effectiveOrder" min="1" step="1" />
             </label>
 
+            <p class="form-note full-width">`Start Order` is the original running order. `Display Order` is used for queue and result sorting, and it does not change automatically when `Start Order` is edited.</p>
+
             <label class="full-width">
               <span>Memo</span>
               <input type="text" id="memo" />
@@ -108,6 +110,8 @@
               <button id="normalizeBtn" type="button">Normalize Order</button>
             </div>
           </div>
+
+          <p class="toolbar-note">`Normalize Order` renumbers `Display Order` only, using the current display sort order from top to bottom as 1, 2, 3...</p>
 
           <div class="summary-strip" id="summaryStrip">
             <div class="summary-box"><span>Total</span><strong id="sumTotal">0</strong></div>

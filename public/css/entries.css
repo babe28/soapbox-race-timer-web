@@ -79,6 +79,16 @@
 .summary-box strong {
   font-size: 22px;
 }
+.form-note,
+.toolbar-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.toolbar-note {
+  margin: -2px 0 14px;
+}
 .table-wrap {
   overflow: auto;
   border: 1px solid var(--line);
