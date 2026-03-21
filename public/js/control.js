@@ -146,7 +146,14 @@ function render(data) {
   document.getElementById('nowCard').textContent =
     data.nowRunningEntry ? `No.${data.nowRunningEntry.bibNo} ${data.nowRunningEntry.name}` : '-';
   document.getElementById('nextCard').textContent =
-    data.nextEntry ? `No.${data.nextEntry.bibNo} ${data.nextEntry.name}` : '-';
+    data.nextEntry ? `No.${data.nextEntry.bibNo} ${data.nextEntry.name}` : '';
+
+  const moveNextBtn = document.getElementById('moveNextBtn');
+  const hasNext = Boolean(data.nextEntry?.id);
+  if (moveNextBtn) moveNextBtn.disabled = !hasNext;
+
+  const nextCard = document.getElementById('nextCard');
+  if (nextCard) nextCard.classList.toggle('is-empty', !hasNext);
 
   document.getElementById('sumTotal').textContent = data.summary?.total ?? 0;
   document.getElementById('sumRanked').textContent = data.summary?.ranked ?? 0;

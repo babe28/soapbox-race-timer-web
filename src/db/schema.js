@@ -16,6 +16,7 @@ const schemaStatements = [
       show_clock INTEGER NOT NULL DEFAULT 1,
       show_last_update INTEGER NOT NULL DEFAULT 1,
       show_overall_best INTEGER NOT NULL DEFAULT 1,
+      overall_best_include_practice INTEGER NOT NULL DEFAULT 0,
       show_effects INTEGER NOT NULL DEFAULT 1,
       memo_title TEXT NOT NULL DEFAULT 'Memo',
       auto_backup_interval_min INTEGER NOT NULL DEFAULT 5,

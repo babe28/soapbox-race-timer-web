@@ -31,6 +31,9 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'memo_title')) {
       db.exec("ALTER TABLE settings ADD COLUMN memo_title TEXT NOT NULL DEFAULT 'Memo'");
     }
+    if (!settingsColumns.some((column) => column.name === 'overall_best_include_practice')) {
+      db.exec('ALTER TABLE settings ADD COLUMN overall_best_include_practice INTEGER NOT NULL DEFAULT 0');
+    }
   });
   applySchema();
 }

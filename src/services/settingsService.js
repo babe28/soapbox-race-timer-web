@@ -15,6 +15,7 @@ function getSettings(db) {
     showClock: toBool(row.show_clock),
     showLastUpdate: toBool(row.show_last_update),
     showOverallBest: toBool(row.show_overall_best),
+    overallBestIncludePractice: toBool(row.overall_best_include_practice),
     showEffects: toBool(row.show_effects),
     memoTitle: row.memo_title,
     autoBackupIntervalMin: row.auto_backup_interval_min,
@@ -36,6 +37,9 @@ function updateSettings(db, payload) {
     show_clock: payload.showClock === undefined ? current.show_clock : Number(Boolean(payload.showClock)),
     show_last_update: payload.showLastUpdate === undefined ? current.show_last_update : Number(Boolean(payload.showLastUpdate)),
     show_overall_best: payload.showOverallBest === undefined ? current.show_overall_best : Number(Boolean(payload.showOverallBest)),
+    overall_best_include_practice: payload.overallBestIncludePractice === undefined
+      ? current.overall_best_include_practice
+      : Number(Boolean(payload.overallBestIncludePractice)),
     show_effects: payload.showEffects === undefined ? current.show_effects : Number(Boolean(payload.showEffects)),
     memo_title: payload.memoTitle ?? current.memo_title,
     auto_backup_interval_min: payload.autoBackupIntervalMin ?? current.auto_backup_interval_min,
@@ -55,6 +59,7 @@ function updateSettings(db, payload) {
       show_clock = @show_clock,
       show_last_update = @show_last_update,
       show_overall_best = @show_overall_best,
+      overall_best_include_practice = @overall_best_include_practice,
       show_effects = @show_effects,
       memo_title = @memo_title,
       auto_backup_interval_min = @auto_backup_interval_min,

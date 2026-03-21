@@ -46,7 +46,7 @@ function getFollowingAvailableEntryId(db, referenceEntryId, excludedIds = []) {
   `).get(...ids, reference.effective_order, reference.effective_order, reference.bib_no);
 
   if (nextRow?.id) return nextRow.id;
-  return getNextAvailableEntryId(db, ids);
+  return null;
 }
 
 function createControlRouter(db, wsHub) {

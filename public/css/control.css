@@ -38,6 +38,14 @@
   padding: 12px 14px;
 }
 .queue-card + .queue-card { margin-top: 10px; }
+.queue-card strong.is-empty {
+  color: var(--muted);
+}
+.queue-action:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+}
 .queue-label {
   display: block;
   color: var(--muted);

@@ -1,13 +1,14 @@
 body.display-body {
-  width: 1920px;
-  height: 1080px;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
 }
 .display-shell {
-  width: 1920px;
-  height: 1080px;
+  width: 100vw;
+  height: 100vh;
   display: grid;
-  grid-template-rows: 112px 1fr 100px;
+  grid-template-rows: 112px minmax(0, 1fr) 100px;
   background:
     radial-gradient(circle at top left, rgba(84, 109, 255, 0.14), transparent 30%),
     linear-gradient(180deg, #050814 0%, #0a1020 48%, #080d17 100%);
@@ -19,8 +20,8 @@ body.display-body {
   padding: 14px 22px 0;
 }
 .header-block {
-  background: linear-gradient(180deg, rgba(23, 31, 58, 0.96), rgba(12, 18, 36, 0.96));
-  border: 1px solid rgba(127, 149, 255, 0.28);
+  background: linear-gradient(180deg, rgba(39, 58, 109, 0.98), rgba(16, 28, 62, 0.98));
+  border: 1px solid rgba(148, 176, 255, 0.32);
   border-radius: 16px;
   padding: 12px 18px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -40,6 +41,11 @@ body.display-body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#lastUpdate {
+  font-size: 24px;
+  font-weight: 600;
+  color: #dbe3ff;
+}
 .header-event .value {
   font-size: 34px;
 }
@@ -50,6 +56,7 @@ body.display-body {
 }
 .display-main {
   padding: 14px 22px 0;
+  min-height: 0;
 }
 .results-table {
   width: 100%;
@@ -60,18 +67,20 @@ body.display-body {
 .results-table thead th {
   background: linear-gradient(180deg, #27305c 0%, #181f3f 100%);
   color: #f2f4ff;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 13px 10px;
+  padding: 10px 10px;
   border-top: 1px solid rgba(149, 168, 255, 0.35);
   border-bottom: 1px solid rgba(149, 168, 255, 0.25);
+  border-right: 1px solid rgba(149, 168, 255, 0.12);
 }
 .results-table tbody td {
   color: #ffffff;
   border-top: 1px solid rgba(140, 153, 217, 0.26);
   border-bottom: 1px solid rgba(64, 75, 128, 0.38);
+  border-right: 1px solid rgba(149, 168, 255, 0.12);
   padding: 10px 10px;
   font-size: 22px;
   line-height: 1.1;
@@ -180,10 +189,11 @@ body.display-body {
   grid-template-columns: 1.5fr 1.5fr 0.95fr;
   gap: 14px;
   padding: 10px 22px 18px;
+  align-self: end;
 }
 .footer-block {
-  background: linear-gradient(180deg, rgba(23, 31, 58, 0.96), rgba(12, 18, 36, 0.96));
-  border: 1px solid rgba(127, 149, 255, 0.28);
+  background: linear-gradient(180deg, rgba(18, 53, 74, 0.98), rgba(8, 29, 45, 0.98));
+  border: 1px solid rgba(111, 214, 255, 0.24);
   border-radius: 16px;
   padding: 14px 18px;
   display: flex;

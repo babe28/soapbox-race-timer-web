@@ -226,7 +226,11 @@ function getDisplayCurrent(db) {
     WHERE valid_for_display = 1
       AND status = 'finished'
       AND goal_ms IS NOT NULL
-      ${practiceOnly ? `AND run_type = 'practice'` : ''}
+      ${practiceOnly
+        ? `AND run_type = 'practice'`
+        : settings.overallBestIncludePractice
+          ? ''
+          : `AND run_type <> 'practice'`}
     ORDER BY goal_ms ASC
     LIMIT 1
   `).get();

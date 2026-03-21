@@ -20,6 +20,7 @@ function bindSettingsElements() {
   settingsEls.showClock = document.getElementById('showClock');
   settingsEls.showLastUpdate = document.getElementById('showLastUpdate');
   settingsEls.showOverallBest = document.getElementById('showOverallBest');
+  settingsEls.overallBestIncludePractice = document.getElementById('overallBestIncludePractice');
   settingsEls.showEffects = document.getElementById('showEffects');
   settingsEls.memoTitle = document.getElementById('memoTitle');
   settingsEls.currentSettings = document.getElementById('currentSettings');
@@ -76,6 +77,7 @@ function applySettingsToForm(data) {
   settingsEls.showClock.checked = Boolean(data.showClock);
   settingsEls.showLastUpdate.checked = Boolean(data.showLastUpdate);
   settingsEls.showOverallBest.checked = Boolean(data.showOverallBest);
+  settingsEls.overallBestIncludePractice.checked = Boolean(data.overallBestIncludePractice);
   settingsEls.showEffects.checked = Boolean(data.showEffects);
   settingsEls.memoTitle.value = data.memoTitle ?? 'Memo';
 }
@@ -96,6 +98,7 @@ async function saveSettings(event) {
     showClock: settingsEls.showClock.checked,
     showLastUpdate: settingsEls.showLastUpdate.checked,
     showOverallBest: settingsEls.showOverallBest.checked,
+    overallBestIncludePractice: settingsEls.overallBestIncludePractice.checked,
     showEffects: settingsEls.showEffects.checked,
     memoTitle: settingsEls.memoTitle.value.trim() || 'Memo',
     autoBackupIntervalMin: Number(settingsEls.autoBackupIntervalMin.value || 5),
@@ -183,6 +186,7 @@ function renderCurrentSettings(data) {
     ['Show Clock', boolText(data.showClock)],
     ['Show Last Update', boolText(data.showLastUpdate)],
     ['Show Overall Best', boolText(data.showOverallBest)],
+    ['Overall Best Includes Practice', boolText(data.overallBestIncludePractice)],
     ['Show Effects', boolText(data.showEffects)],
     ['Memo Column Title', data.memoTitle ?? 'Memo'],
     ['Auto Backup Interval', `${data.autoBackupIntervalMin ?? 5} min`],

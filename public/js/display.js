@@ -7,9 +7,9 @@
   let currentPollController = null;
   let clockTimer = null;
   let localConnectionOk = true;
-  const ROW_HIGHLIGHT_MS = 100000;
+  const ROW_HIGHLIGHT_MS = 50000;
   const TIME_FLASH_MS = 40000;
-  const BEST_MARK_MS = 30000;
+  const BEST_MARK_MS = 40000;
 
   async function loadDisplay() {
     const requestId = ++pollRequestId;
