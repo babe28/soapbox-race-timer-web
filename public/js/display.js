@@ -3,6 +3,9 @@
   const body = document.body;
   const app = document.getElementById('displayApp');
   let pollTimer = null;
+  const ROW_HIGHLIGHT_MS = 8000;
+  const TIME_FLASH_MS = 60000;
+  const TIME_FRESH_MS = 15000;
 
   async function loadDisplay() {
     try {
@@ -69,7 +72,7 @@
 
     for (const row of data.rows || []) {
       const tr = document.createElement('tr');
-      if (row.highlight) tr.classList.add('highlight');
+      if (row.highlight || isRecent(row.highlightUpdatedAt, ROW_HIGHLIGHT_MS)) tr.classList.add('highlight');
       if (!row.rank) tr.classList.add('unrun');
       tr.innerHTML = `
         <td>${escapeHtml(row.rank || '')}</td>
@@ -77,15 +80,31 @@
         <td class="cell-name">${escapeHtml(row.name || '')}</td>
         <td class="cell-kana">${escapeHtml(row.kana || '')}</td>
         <td class="cell-car">${escapeHtml(row.carNo || '')}</td>
-        <td class="cell-practice">${escapeHtml(row.practice || '--.---')}</td>
-        <td class="cell-split race-col">${escapeHtml(row.r1?.split || '--.---')}</td>
-        <td class="race-col">${escapeHtml(row.r1?.goal || '--.---')}</td>
-        <td class="cell-split race-col">${escapeHtml(row.r2?.split || '--.---')}</td>
-        <td class="race-col">${escapeHtml(row.r2?.goal || '--.---')}</td>
-        <td class="cell-best race-col">${escapeHtml(row.best || '--.---')}</td>
+        <td class="cell-practice ${timeClass(row.practiceUpdatedAt)}">${escapeHtml(row.practice || '--.---')}</td>
+        <td class="cell-split race-col ${timeClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.split || '--.---')}</td>
+        <td class="race-col ${timeClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.goal || '--.---')}</td>
+        <td class="cell-split race-col ${timeClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.split || '--.---')}</td>
+        <td class="race-col ${timeClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.goal || '--.---')}</td>
+        <td class="cell-best race-col ${timeClass(row.bestUpdatedAt)}">${escapeHtml(row.best || '--.---')}</td>
       `;
       tbody.appendChild(tr);
     }
+  }
+
+  function timeClass(updatedAt) {
+    if (!isRecent(updatedAt, TIME_FLASH_MS)) return '';
+    return isRecent(updatedAt, TIME_FRESH_MS) ? 'time-fresh' : 'time-recent';
+  }
+
+  function isRecent(updatedAt, windowMs) {
+    const ts = parseTimestamp(updatedAt);
+    return ts !== null && (Date.now() - ts) >= 0 && (Date.now() - ts) <= windowMs;
+  }
+
+  function parseTimestamp(value) {
+    if (!value) return null;
+    const ts = Date.parse(value);
+    return Number.isNaN(ts) ? null : ts;
   }
 
   function escapeHtml(value) {

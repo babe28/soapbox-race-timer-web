@@ -107,6 +107,7 @@ async function loadControlState() {
   } catch (err) {
     console.error(err);
   }
+  return controlState;
 }
 
 function render(data) {
@@ -319,7 +320,12 @@ async function saveAndNext() {
   if (!ok) return;
   await postJson('/api/control/action/move-next', {});
   clearRunForm();
-  await loadControlState();
+  const data = await loadControlState();
+  if (data?.nextEntry) {
+    setSelectedEntry(data.nextEntry);
+  } else if (data?.nowRunningEntry) {
+    setSelectedEntry(data.nowRunningEntry);
+  }
 }
 
 function clearRunForm() {

@@ -1,6 +1,12 @@
 const { getSettings } = require('./settingsService');
 const { formatMs } = require('./formatters');
 
+function toIsoTimestamp(value) {
+  if (!value) return null;
+  const text = String(value);
+  return text.endsWith('Z') ? text : `${text}Z`;
+}
+
 function getBestRunByEntryAndType(db, entryId, runType) {
   return db.prepare(`
     SELECT *
@@ -14,6 +20,34 @@ function getBestRunByEntryAndType(db, entryId, runType) {
       created_at DESC
     LIMIT 1
   `).get(entryId, runType);
+}
+
+function getLatestDisplayRunByEntry(db, entryId, practiceOnly) {
+  return db.prepare(`
+    SELECT *
+    FROM runs
+    WHERE entry_id = ?
+      AND valid_for_display = 1
+      AND status = 'finished'
+      AND goal_ms IS NOT NULL
+      ${practiceOnly ? `AND run_type = 'practice'` : ''}
+    ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+    LIMIT 1
+  `).get(entryId);
+}
+
+function getBestDisplayRunByEntry(db, entryId, practiceOnly) {
+  return db.prepare(`
+    SELECT *
+    FROM runs
+    WHERE entry_id = ?
+      AND valid_for_display = 1
+      AND status = 'finished'
+      AND goal_ms IS NOT NULL
+      ${practiceOnly ? `AND run_type = 'practice'` : ''}
+    ORDER BY goal_ms ASC, COALESCE(updated_at, created_at) DESC, id DESC
+    LIMIT 1
+  `).get(entryId);
 }
 
 function formatJstTime(value) {
@@ -166,6 +200,9 @@ function getDisplayCurrent(db) {
     const practice = getBestRunByEntryAndType(db, row.id, 'practice');
     const r1 = getBestRunByEntryAndType(db, row.id, 'race1');
     const r2 = getBestRunByEntryAndType(db, row.id, 'race2');
+    const latestRun = getLatestDisplayRunByEntry(db, row.id, practiceOnly);
+    const bestRun = getBestDisplayRunByEntry(db, row.id, practiceOnly);
+
     return {
       rank: row.rank_no ?? null,
       bibNo: row.bib_no,
@@ -176,13 +213,18 @@ function getDisplayCurrent(db) {
       r1: {
         split: settings.showSplit ? formatMs(r1?.split_ms) : null,
         goal: formatMs(r1?.goal_ms),
+        updatedAt: toIsoTimestamp(r1?.updated_at || r1?.created_at),
       },
       r2: {
         split: settings.showSplit ? formatMs(r2?.split_ms) : null,
         goal: formatMs(r2?.goal_ms),
+        updatedAt: toIsoTimestamp(r2?.updated_at || r2?.created_at),
       },
       best: row.best_goal_ms !== undefined ? formatMs(row.best_goal_ms) : '--.---',
       highlight: false,
+      highlightUpdatedAt: toIsoTimestamp(latestRun?.updated_at || latestRun?.created_at),
+      practiceUpdatedAt: toIsoTimestamp(practice?.updated_at || practice?.created_at),
+      bestUpdatedAt: toIsoTimestamp(bestRun?.updated_at || bestRun?.created_at),
     };
   };
 
