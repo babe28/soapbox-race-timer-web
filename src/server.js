@@ -23,7 +23,9 @@ initDb(db);
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan('dev', {
+  skip: (req, res) => req.method === 'GET' && res.statusCode < 400,
+}));
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/health', (_req, res) => {

@@ -3,9 +3,9 @@
   const body = document.body;
   const app = document.getElementById('displayApp');
   let pollTimer = null;
-  const ROW_HIGHLIGHT_MS = 8000;
-  const TIME_FLASH_MS = 60000;
-  const TIME_FRESH_MS = 15000;
+  const ROW_HIGHLIGHT_MS = 30000;
+  const TIME_FLASH_MS = 30000;
+  const BEST_MARK_MS = 30000;
 
   async function loadDisplay() {
     try {
@@ -80,20 +80,25 @@
         <td class="cell-name">${escapeHtml(row.name || '')}</td>
         <td class="cell-kana">${escapeHtml(row.kana || '')}</td>
         <td class="cell-car">${escapeHtml(row.carNo || '')}</td>
-        <td class="cell-practice ${timeClass(row.practiceUpdatedAt)}">${escapeHtml(row.practice || '--.---')}</td>
-        <td class="cell-split race-col ${timeClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.split || '--.---')}</td>
-        <td class="race-col ${timeClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.goal || '--.---')}</td>
-        <td class="cell-split race-col ${timeClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.split || '--.---')}</td>
-        <td class="race-col ${timeClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.goal || '--.---')}</td>
-        <td class="cell-best race-col ${timeClass(row.bestUpdatedAt)}">${escapeHtml(row.best || '--.---')}</td>
+        <td class="cell-practice ${enteredClass(row.practiceUpdatedAt)}">${escapeHtml(row.practice || '--.---')}</td>
+        <td class="cell-split race-col ${enteredClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.split || '--.---')}</td>
+        <td class="race-col ${enteredClass(row.r1?.updatedAt)}">${escapeHtml(row.r1?.goal || '--.---')}</td>
+        <td class="cell-split race-col ${enteredClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.split || '--.---')}</td>
+        <td class="race-col ${enteredClass(row.r2?.updatedAt)}">${escapeHtml(row.r2?.goal || '--.---')}</td>
+        <td class="cell-best race-col ${bestClass(row.bestUpdatedAt)}">${escapeHtml(row.best || '--.---')}</td>
       `;
       tbody.appendChild(tr);
     }
   }
 
-  function timeClass(updatedAt) {
+  function enteredClass(updatedAt) {
     if (!isRecent(updatedAt, TIME_FLASH_MS)) return '';
-    return isRecent(updatedAt, TIME_FRESH_MS) ? 'time-fresh' : 'time-recent';
+    return 'time-entered';
+  }
+
+  function bestClass(updatedAt) {
+    if (!isRecent(updatedAt, BEST_MARK_MS)) return '';
+    return 'time-best';
   }
 
   function isRecent(updatedAt, windowMs) {

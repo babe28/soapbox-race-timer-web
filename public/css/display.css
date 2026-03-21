@@ -73,23 +73,21 @@ body.display-body {
   text-align: center;
 }
 .results-table tbody tr.highlight td {
-  outline: 2px solid var(--accent-2);
-  background: rgba(31, 43, 70, 0.99);
-  box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.28), 0 0 24px rgba(255, 207, 90, 0.18);
-  animation: row-highlight-pulse 1.2s ease-in-out 2;
+  background: rgba(40, 57, 92, 0.99);
+  box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.22), 0 0 28px rgba(255, 207, 90, 0.12);
+  animation: row-highlight-glow 1.6s ease-in-out infinite;
 }
 .results-table tbody tr.unrun td {
   color: #a8b7d6;
 }
-.results-table tbody td.time-fresh {
+.results-table tbody td.time-entered {
+  font-weight: 800;
+  animation: time-entered-pulse 1.1s steps(2, end) infinite;
+}
+.results-table tbody td.time-best {
   color: var(--accent-2);
   font-weight: 800;
-  text-shadow: 0 0 14px rgba(255, 207, 90, 0.4);
-}
-.results-table tbody td.time-recent {
-  color: #ff8a5f;
-  font-weight: 800;
-  text-shadow: 0 0 10px rgba(255, 106, 125, 0.25);
+  text-shadow: 0 0 14px rgba(255, 207, 90, 0.35);
 }
 .results-table .cell-name {
   font-weight: 800;
@@ -148,12 +146,22 @@ body.display-body {
 .connection-ng {
   color: var(--danger);
 }
-@keyframes row-highlight-pulse {
+@keyframes row-highlight-glow {
   0%, 100% {
-    transform: translateY(0);
+    background-color: rgba(31, 43, 70, 0.92);
+    box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.12), 0 0 10px rgba(255, 207, 90, 0.05);
   }
   50% {
-    transform: translateY(-1px);
+    background-color: rgba(50, 70, 112, 1);
+    box-shadow: inset 0 0 0 1px rgba(255, 207, 90, 0.32), 0 0 28px rgba(255, 207, 90, 0.18);
+  }
+}
+@keyframes time-entered-pulse {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0.35;
   }
 }
 body.mode-30 .results-table thead th { font-size: 18px; padding: 12px 8px; }

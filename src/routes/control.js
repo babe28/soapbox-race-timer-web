@@ -16,6 +16,38 @@ function getNextAvailableEntryId(db, excludedIds = []) {
   return row?.id ?? null;
 }
 
+function getFollowingAvailableEntryId(db, referenceEntryId, excludedIds = []) {
+  const ids = excludedIds.filter((id) => Number.isInteger(id) && id > 0);
+  const referenceId = Number(referenceEntryId);
+  if (!referenceId) return getNextAvailableEntryId(db, ids);
+
+  const reference = db.prepare(`
+    SELECT effective_order, bib_no
+    FROM entries
+    WHERE id = ?
+  `).get(referenceId);
+
+  if (!reference) return getNextAvailableEntryId(db, ids);
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const filterSql = ids.length ? `AND id NOT IN (${placeholders})` : '';
+  const nextRow = db.prepare(`
+    SELECT id
+    FROM entries
+    WHERE is_skipped = 0
+      ${filterSql}
+      AND (
+        effective_order > ?
+        OR (effective_order = ? AND bib_no > ?)
+      )
+    ORDER BY effective_order ASC, bib_no ASC
+    LIMIT 1
+  `).get(...ids, reference.effective_order, reference.effective_order, reference.bib_no);
+
+  if (nextRow?.id) return nextRow.id;
+  return getNextAvailableEntryId(db, ids);
+}
+
 function createControlRouter(db, wsHub) {
   const router = express.Router();
 
@@ -25,7 +57,7 @@ function createControlRouter(db, wsHub) {
 
   router.post('/action/set-now', (req, res) => {
     const entryId = req.body.entryId || null;
-    const nextId = getNextAvailableEntryId(db, [entryId]);
+    const nextId = getFollowingAvailableEntryId(db, entryId, [entryId]);
     db.prepare(`
       UPDATE display_state SET
         now_running_entry_id = ?,
@@ -48,7 +80,7 @@ function createControlRouter(db, wsHub) {
   router.post('/action/move-next', (_req, res) => {
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
     const newNowId = state?.next_entry_id || getNextAvailableEntryId(db, []);
-    const newNextId = getNextAvailableEntryId(db, [newNowId]);
+    const newNextId = getFollowingAvailableEntryId(db, newNowId, [newNowId]);
 
     db.prepare(`
       UPDATE display_state SET
@@ -69,7 +101,8 @@ function createControlRouter(db, wsHub) {
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
     let nextId = state?.next_entry_id ?? null;
     if (nextId === entryId) {
-      nextId = getNextAvailableEntryId(db, [state?.now_running_entry_id ?? null]);
+      const referenceId = state?.now_running_entry_id ?? entryId;
+      nextId = getFollowingAvailableEntryId(db, referenceId, [referenceId]);
       db.prepare('UPDATE display_state SET next_entry_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(nextId);
     }
 
