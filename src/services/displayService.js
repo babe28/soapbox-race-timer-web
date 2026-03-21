@@ -93,12 +93,12 @@ function formatJstTime(value) {
     second: '2-digit',
   });
 }
-
+//　日本語表示切り替え部分Unicodeエスケープしてます
 function getLanguagePack(language, practiceOnly) {
   const isJa = language === 'ja';
   return {
     labels: {
-      pos: practiceOnly ? (isJa ? '\u66ab\u5b9a\u9806\u4f4d(\u7df4\u7fd2\u8d70\u884c)' : 'Practice Rank') : (isJa ? '\u9806\u4f4d' : 'Pos'),
+      pos: practiceOnly ? (isJa ? '\u7df4\u7fd2\u8d70\u884c\u9806\u4f4d' : 'Practice Rank') : (isJa ? '\u9806\u4f4d' : 'Pos'),
       runStatus: isJa ? '\u72b6\u614b' : 'Status',
       no: 'No',
       name: isJa ? '\u9078\u624b\u540d' : 'Name',
@@ -111,7 +111,7 @@ function getLanguagePack(language, practiceOnly) {
       r2Split: isJa ? 'R2\u4e2d\u9593' : 'R2-Sec',
       r2Goal: isJa ? 'R2\u30b4\u30fc\u30eb' : 'R2-Goal',
       best: isJa ? '\u30d9\u30b9\u30c8' : 'Best',
-      event: isJa ? '\u5927\u4f1a' : 'Event',
+      event: isJa ? '\u5927\u4F1A\u540D' : 'Event',
       heat: isJa ? '\u30d2\u30fc\u30c8' : 'Heat',
       status: isJa ? '\u72b6\u614b' : 'Status',
       lastUpdate: isJa ? '\u66f4\u65b0\u6642\u523b' : 'Last Update',
