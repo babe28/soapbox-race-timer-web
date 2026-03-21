@@ -238,7 +238,7 @@ function getDisplayCurrent(db) {
     const latestRun = getLatestDisplayRunByEntry(db, row.id, practiceOnly);
     const bestRun = getBestDisplayRunByEntry(db, row.id, practiceOnly);
     const statusRun = getLatestStatusRunByEntry(db, row.id, practiceOnly);
-    const statusBadge = getRunStatusBadge(statusRun?.status);
+    const statusBadge = row.rank_no ? getRunStatusBadge(statusRun?.status) : { code: '', tone: 'empty' };
 
     return {
       status: statusBadge.code,
