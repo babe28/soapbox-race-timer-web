@@ -3,7 +3,7 @@ const { getSettings, updateSettings } = require('../services/settingsService');
 const { validateLanguage } = require('../services/validation');
 const { resetDb, clearRunsOnly } = require('../db');
 const { getDisplayCurrent } = require('../services/displayService');
-const { listAuditLogs } = require('../services/auditService');
+const { listAuditLogs, clearAuditLogs } = require('../services/auditService');
 
 function csvEscape(value) {
   const text = String(value ?? '');
@@ -43,6 +43,7 @@ function getApiCatalog() {
     { method: 'POST', path: '/api/settings/clear-runs', description: 'Delete runs only' },
     { method: 'GET', path: '/api/settings/export/results.csv', description: 'Export current results as CSV' },
     { method: 'GET', path: '/api/settings/logs', description: 'Read audit logs' },
+    { method: 'POST', path: '/api/settings/clear-logs', description: 'Delete audit logs only' },
     { method: 'GET', path: '/api/settings/apis', description: 'Read API catalog' },
     { method: 'GET', path: '/api/entries', description: 'List entries' },
     { method: 'POST', path: '/api/entries', description: 'Create entry' },
@@ -91,6 +92,11 @@ function createSettingsRouter(db, wsHub) {
   router.get('/logs', (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     res.json(listAuditLogs(db, limit));
+  });
+
+  router.post('/clear-logs', (_req, res) => {
+    clearAuditLogs(db);
+    res.json({ ok: true });
   });
 
   router.get('/apis', (_req, res) => {

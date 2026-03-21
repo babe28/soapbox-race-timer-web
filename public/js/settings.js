@@ -13,6 +13,7 @@ function bindSettingsElements() {
   settingsEls.language = document.getElementById('language');
   settingsEls.autoBackupIntervalMin = document.getElementById('autoBackupIntervalMin');
   settingsEls.clearRunsBtn = document.getElementById('clearRunsBtn');
+  settingsEls.clearLogsBtn = document.getElementById('clearLogsBtn');
   settingsEls.showKana = document.getElementById('showKana');
   settingsEls.showCarNo = document.getElementById('showCarNo');
   settingsEls.showPractice = document.getElementById('showPractice');
@@ -40,6 +41,7 @@ function bindSettingsEvents() {
   settingsEls.resetDbBtn?.addEventListener('click', resetDatabase);
   settingsEls.exportCsvBtn?.addEventListener('click', exportCsv);
   settingsEls.clearRunsBtn?.addEventListener('click', clearRunsOnly);
+  settingsEls.clearLogsBtn?.addEventListener('click', clearLogsOnly);
   settingsEls.reloadLogsBtn?.addEventListener('click', loadAuditLogs);
   settingsEls.reloadApisBtn?.addEventListener('click', loadApiCatalog);
 }
@@ -172,6 +174,26 @@ async function clearRunsOnly() {
   } catch (err) {
     console.error(err);
     alert('Failed to clear runs');
+  }
+}
+
+async function clearLogsOnly() {
+  if (!window.confirm('Delete audit logs only?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/settings/clear-logs', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Failed to clear audit logs');
+      return;
+    }
+    await loadAuditLogs();
+    alert('Audit logs cleared');
+  } catch (err) {
+    console.error(err);
+    alert('Failed to clear audit logs');
   }
 }
 

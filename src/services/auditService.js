@@ -34,4 +34,8 @@ function listAuditLogs(db, limit = 100) {
   `).all(limit);
 }
 
-module.exports = { logAudit, listAuditLogs };
+function clearAuditLogs(db) {
+  db.prepare('DELETE FROM audit_logs').run();
+}
+
+module.exports = { logAudit, listAuditLogs, clearAuditLogs };

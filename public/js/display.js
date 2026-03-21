@@ -6,6 +6,8 @@
   let pollRequestId = 0;
   let currentPollController = null;
   let clockTimer = null;
+  let ws = null;
+  let wsReconnectTimer = null;
   let localConnectionOk = true;
   const ROW_HIGHLIGHT_MS = 50000;
   const TIME_FLASH_MS = 40000;
@@ -39,6 +41,51 @@
         pollTimer = setTimeout(loadDisplay, 1000);
       }
     }
+  }
+
+  function connectWs() {
+    clearTimeout(wsReconnectTimer);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${window.location.host}/ws`;
+
+    try {
+      ws = new WebSocket(url);
+    } catch (_err) {
+      scheduleWsReconnect();
+      return;
+    }
+
+    ws.addEventListener('message', (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'display_update'
+          || message.type === 'run_updated'
+          || message.type === 'settings_updated'
+          || message.type === 'state_update'
+          || message.type === 'entry_updated') {
+          loadDisplay();
+        }
+      } catch (_err) {
+        // ignore invalid websocket payloads
+      }
+    });
+
+    ws.addEventListener('close', () => {
+      scheduleWsReconnect();
+    });
+
+    ws.addEventListener('error', () => {
+      try {
+        ws?.close();
+      } catch (_err) {
+        // ignore close errors
+      }
+    });
+  }
+
+  function scheduleWsReconnect() {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = setTimeout(connectWs, 1500);
   }
 
   function render(data) {
@@ -221,4 +268,5 @@
   }
 
   await loadDisplay();
+  connectWs();
 })();
