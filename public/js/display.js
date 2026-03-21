@@ -5,6 +5,8 @@
   let pollTimer = null;
   let pollRequestId = 0;
   let currentPollController = null;
+  let clockTimer = null;
+  let localConnectionOk = true;
   const ROW_HIGHLIGHT_MS = 30000;
   const TIME_FLASH_MS = 30000;
   const BEST_MARK_MS = 30000;
@@ -21,9 +23,12 @@
       });
       const data = await res.json();
       if (requestId !== pollRequestId) return;
+      localConnectionOk = true;
       render(data);
     } catch (err) {
       if (err.name === 'AbortError') return;
+      localConnectionOk = false;
+      renderConnection(false);
       console.error(err);
       if (!document.getElementById('displayLoadError')) {
         app.insertAdjacentHTML('beforeend', '<div id="displayLoadError" style="padding:20px;color:#ff6a7d;">Failed to load display data</div>');
@@ -65,7 +70,7 @@
     document.getElementById('heatNo').textContent = data.header?.heat ? String(data.header.heat) : '-';
     document.getElementById('statusText').textContent = data.header?.status || '-';
     document.getElementById('lastUpdate').textContent = data.header?.lastUpdate || '-';
-    document.getElementById('clockText').textContent = data.header?.clock || '-';
+    syncClock(data.header?.clock);
     document.getElementById('overallBest').textContent = data.header?.overallBest || '--.---';
     document.getElementById('nowRunning').textContent = data.nowRunning || '-';
     document.getElementById('nextRunning').textContent = data.next || '-';
@@ -77,10 +82,7 @@
       liveState.classList.add('is-pulse');
     }
 
-    const connectionEl = document.getElementById('connectionState');
-    const connected = !!data.connection?.connected;
-    connectionEl.textContent = connected ? 'CONNECTED' : 'DISCONNECTED';
-    connectionEl.className = connected ? 'footer-value connection-ok' : 'footer-value connection-ng';
+    renderConnection(localConnectionOk && !!data.connection?.connected);
 
     body.classList.toggle('mode-30', data.settings?.rowsPerPage === 30);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
@@ -190,6 +192,31 @@
     if (!value) return null;
     const ts = Date.parse(value);
     return Number.isNaN(ts) ? null : ts;
+  }
+
+  function syncClock(fallbackText) {
+    updateClock(fallbackText);
+    if (clockTimer) return;
+    clockTimer = setInterval(() => updateClock(fallbackText), 1000);
+  }
+
+  function updateClock(fallbackText) {
+    const now = new Date();
+    const text = now.toLocaleTimeString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    document.getElementById('clockText').textContent = text || fallbackText || '-';
+  }
+
+  function renderConnection(connected) {
+    const connectionEl = document.getElementById('connectionState');
+    if (!connectionEl) return;
+    connectionEl.textContent = connected ? 'CONNECTED' : 'DISCONNECTED';
+    connectionEl.className = connected ? 'footer-value connection-ok' : 'footer-value connection-ng';
   }
 
   await loadDisplay();
