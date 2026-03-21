@@ -7,8 +7,8 @@
   let currentPollController = null;
   let clockTimer = null;
   let localConnectionOk = true;
-  const ROW_HIGHLIGHT_MS = 30000;
-  const TIME_FLASH_MS = 30000;
+  const ROW_HIGHLIGHT_MS = 100000;
+  const TIME_FLASH_MS = 40000;
   const BEST_MARK_MS = 30000;
 
   async function loadDisplay() {
