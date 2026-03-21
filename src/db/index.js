@@ -28,4 +28,19 @@ function initDb(db) {
   applySchema();
 }
 
-module.exports = { createDb, initDb };
+function resetDb(db) {
+  const reset = db.transaction(() => {
+    db.exec('DELETE FROM runs');
+    db.exec('DELETE FROM entry_order_history');
+    db.exec('DELETE FROM audit_logs');
+    db.exec('DELETE FROM entries');
+    db.exec('DELETE FROM heats');
+    db.exec('DELETE FROM display_state');
+    db.exec('DELETE FROM settings');
+    db.exec("DELETE FROM sqlite_sequence WHERE name IN ('runs', 'entry_order_history', 'audit_logs', 'entries', 'heats')");
+    for (const sql of seedStatements) db.exec(sql);
+  });
+  reset();
+}
+
+module.exports = { createDb, initDb, resetDb };

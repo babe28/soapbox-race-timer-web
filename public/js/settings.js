@@ -22,11 +22,13 @@ function bindSettingsElements() {
   settingsEls.showEffects = document.getElementById('showEffects');
   settingsEls.currentSettings = document.getElementById('currentSettings');
   settingsEls.reloadSettingsBtn = document.getElementById('reloadSettingsBtn');
+  settingsEls.resetDbBtn = document.getElementById('resetDbBtn');
 }
 
 function bindSettingsEvents() {
   settingsEls.form?.addEventListener('submit', saveSettings);
   settingsEls.reloadSettingsBtn?.addEventListener('click', loadSettings);
+  settingsEls.resetDbBtn?.addEventListener('click', resetDatabase);
 }
 
 async function loadSettings() {
@@ -98,6 +100,27 @@ async function saveSettings(event) {
   } catch (err) {
     console.error(err);
     alert('Failed to save settings');
+  }
+}
+
+async function resetDatabase() {
+  if (!window.confirm('Initialize the database? All heats, entries, and runs will be deleted.')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/settings/reset-db', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Failed to initialize database');
+      return;
+    }
+    applySettingsToForm(data.settings || {});
+    renderCurrentSettings(data.settings || {});
+    alert('Database initialized');
+  } catch (err) {
+    console.error(err);
+    alert('Failed to initialize database');
   }
 }
 

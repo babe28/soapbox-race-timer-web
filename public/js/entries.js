@@ -63,14 +63,22 @@ async function loadEntries() {
 
 async function loadHeats() {
   try {
-    const [heatsRes, controlRes] = await Promise.all([
-      fetch('/api/heats', { cache: 'no-store' }),
-      fetch('/api/control/state', { cache: 'no-store' }),
-    ]);
-    heats = await heatsRes.json();
-    const control = await controlRes.json();
-    currentHeatId = control.heatId ?? null;
+    const heatsRes = await fetch('/api/heats', { cache: 'no-store' });
+    const heatsJson = await heatsRes.json().catch(() => ([]));
+    if (!heatsRes.ok) {
+      throw new Error(heatsJson.error || 'Failed to load heats');
+    }
+    heats = Array.isArray(heatsJson) ? heatsJson : [];
     renderHeatOptions();
+
+    const controlRes = await fetch('/api/control/state', { cache: 'no-store' });
+    const controlJson = await controlRes.json().catch(() => ({}));
+    if (controlRes.ok) {
+      currentHeatId = controlJson.heatId ?? null;
+      renderHeatOptions();
+    } else {
+      console.warn('Failed to load control state for heat selection', controlJson);
+    }
   } catch (err) {
     console.error(err);
     alert('Failed to load heats');
@@ -343,9 +351,11 @@ async function saveHeat() {
       alert(json.error || 'Failed to add heat');
       return;
     }
+    heats.push(json);
+    heats.sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')) || Number(a.heat_no || 0) - Number(b.heat_no || 0) || Number(a.id) - Number(b.id));
     els.heatCode.value = '';
     els.heatTitle.value = '';
-    await loadHeats();
+    renderHeatOptions();
     els.currentHeatId.value = String(json.id);
     await selectCurrentHeat();
   } catch (err) {

@@ -24,6 +24,7 @@ const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS heats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       heat_no INTEGER NOT NULL,
+      code TEXT,
       title TEXT,
       status TEXT NOT NULL DEFAULT 'waiting'
           CHECK (status IN ('waiting', 'preparing', 'running', 'finished')),
