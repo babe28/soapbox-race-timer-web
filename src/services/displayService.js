@@ -65,9 +65,9 @@ function getLatestStatusRunByEntry(db, entryId, practiceOnly) {
 function getRunStatusBadge(status) {
   switch (status) {
     case 'finished':
-      return { code: 'OK', tone: 'finished' };
+      return { code: 'Finish', tone: 'finished' };
     case 'pending':
-      return { code: 'P', tone: 'pending' };
+      return { code: 'Ready', tone: 'pending' };
     case 'dq':
       return { code: 'DQ', tone: 'dq' };
     case 'dnf':
@@ -75,7 +75,7 @@ function getRunStatusBadge(status) {
     case 'scratch':
       return { code: 'SCR', tone: 'scratch' };
     case 'void':
-      return { code: 'V', tone: 'void' };
+      return { code: 'Void', tone: 'void' };
     default:
       return { code: '', tone: 'empty' };
   }

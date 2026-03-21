@@ -5,7 +5,6 @@
   let pollTimer = null;
   let pollRequestId = 0;
   let currentPollController = null;
-  let liveTick = 0;
   const ROW_HIGHLIGHT_MS = 30000;
   const TIME_FLASH_MS = 30000;
   const BEST_MARK_MS = 30000;
@@ -22,7 +21,6 @@
       });
       const data = await res.json();
       if (requestId !== pollRequestId) return;
-      liveTick = (liveTick + 1) % 100;
       render(data);
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -74,7 +72,9 @@
 
     const liveState = document.getElementById('liveState');
     if (liveState) {
-      liveState.textContent = `LIVE ${String(liveTick).padStart(2, '0')}`;
+      liveState.classList.remove('is-pulse');
+      void liveState.offsetWidth;
+      liveState.classList.add('is-pulse');
     }
 
     const connectionEl = document.getElementById('connectionState');
@@ -108,7 +108,7 @@
       if (!tr) {
         tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="cell-run-status" data-cell="status"></td>
+          <td class="cell-run-status" data-cell="status"><span class="status-flag status-empty"></span></td>
           <td data-cell="rank"></td>
           <td data-cell="bibNo"></td>
           <td class="cell-name" data-cell="name"></td>
@@ -162,7 +162,10 @@
     td.classList.toggle('time-entered', extraClass === 'time-entered');
     td.classList.toggle('time-best', extraClass === 'time-best');
     if (name === 'status') {
-      td.className = `cell-run-status ${toneClass}`.trim();
+      const flag = td.querySelector('.status-flag');
+      if (!flag) return;
+      flag.textContent = value;
+      flag.className = `status-flag ${toneClass || 'status-empty'}`.trim();
     }
   }
 
