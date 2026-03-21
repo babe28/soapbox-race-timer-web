@@ -83,7 +83,7 @@
               <input type="number" id="effectiveOrder" min="1" step="1" />
             </label>
 
-            <p class="form-note full-width">`Start Order` is the original running order. `Display Order` is used for queue and result sorting, and it does not change automatically when `Start Order` is edited.</p>
+            <p class="form-note full-width">`走順(Start Order)` は元の走行順です。`表示順(Display Order)` はキューやリザルト表示に使う順番で、`走順` を変更しても自動では変わりません。</p>
 
             <label class="full-width">
               <span>Memo</span>
@@ -111,7 +111,9 @@
             </div>
           </div>
 
-          <p class="toolbar-note">`Normalize Order` renumbers `Display Order` only, using the current display sort order from top to bottom as 1, 2, 3...</p>
+          <p class="toolbar-note">`Normalize Order` は `表示順(Display Order)` だけを、現在の並び順の上から 1, 2, 3... と振り直します。`走順(Start Order)` には影響しません。</p>
+
+          <p class="toolbar-note">このページの `STATUS` は走行結果ではなく、キューや表示対象として `有効` か `スキップ` かを表します。ステータス表示をクリックすると切り替えられます。</p>
 
           <div class="summary-strip" id="summaryStrip">
             <div class="summary-box"><span>Total</span><strong id="sumTotal">0</strong></div>

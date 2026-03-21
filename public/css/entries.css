@@ -145,6 +145,17 @@
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 12px;
+  cursor: pointer;
+}
+.status-pill.is-active {
+  background: rgba(88, 214, 141, 0.16);
+  border-color: rgba(88, 214, 141, 0.4);
+  color: #cffff0;
+}
+.status-pill.is-skipped {
+  background: rgba(255, 207, 90, 0.16);
+  border-color: rgba(255, 207, 90, 0.42);
+  color: #fff0bf;
 }
 @media (max-width: 1200px) {
   .entries-grid {

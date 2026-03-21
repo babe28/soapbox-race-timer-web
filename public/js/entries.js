@@ -133,7 +133,7 @@ function renderTable() {
         <td>${escapeHtml(row.name ?? '')}</td>
         <td>${escapeHtml(row.kana ?? '')}</td>
         <td>${escapeHtml(row.car_no ?? '')}</td>
-        <td><span class="status-pill">${skipped ? 'SKIP' : 'READY'}</span></td>
+        <td><button type="button" class="status-pill ${skipped ? 'is-skipped' : 'is-active'}" data-action="toggle-skip">${skipped ? 'スキップ' : '有効'}</button></td>
         <td class="actions-cell">
           <button type="button" class="table-btn" data-action="edit">Edit</button>
           <button type="button" class="table-btn" data-action="toggle-skip">${skipped ? 'Undo' : 'Skip'}</button>
