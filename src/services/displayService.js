@@ -93,6 +93,13 @@ function formatJstTime(value) {
     second: '2-digit',
   });
 }
+
+function formatSignedDeltaMs(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '--.---';
+  const ms = Number(value);
+  const sign = ms >= 0 ? '+' : '-';
+  return `${sign}${formatMs(Math.abs(ms))}`;
+}
 //　日本語表示切り替え部分Unicodeエスケープしてます
 function getLanguagePack(language, practiceOnly) {
   const isJa = language === 'ja';
@@ -110,6 +117,7 @@ function getLanguagePack(language, practiceOnly) {
       r1Goal: isJa ? 'R1\u30b4\u30fc\u30eb' : 'R1-Goal',
       r2Split: isJa ? 'R2\u4e2d\u9593' : 'R2-Sec',
       r2Goal: isJa ? 'R2\u30b4\u30fc\u30eb' : 'R2-Goal',
+      delta: isJa ? '\u5dee\u5206' : 'Diff',
       best: isJa ? '\u30d9\u30b9\u30c8' : 'Best',
       event: isJa ? '\u5927\u4F1A\u540D' : 'Event',
       heat: isJa ? '\u30d2\u30fc\u30c8' : 'Heat',
@@ -239,6 +247,9 @@ function getDisplayCurrent(db) {
     const practice = getBestRunByEntryAndType(db, row.id, 'practice');
     const r1 = getBestRunByEntryAndType(db, row.id, 'race1');
     const r2 = getBestRunByEntryAndType(db, row.id, 'race2');
+    const hasBothGoals = r1?.goal_ms !== null && r1?.goal_ms !== undefined
+      && r2?.goal_ms !== null && r2?.goal_ms !== undefined;
+    const deltaMs = hasBothGoals ? Number(r2.goal_ms) - Number(r1.goal_ms) : null;
     const latestRun = getLatestDisplayRunByEntry(db, row.id, practiceOnly);
     const bestRun = getBestDisplayRunByEntry(db, row.id, practiceOnly);
     const statusRun = getLatestStatusRunByEntry(db, row.id, practiceOnly);
@@ -258,12 +269,15 @@ function getDisplayCurrent(db) {
         split: settings.showSplit ? formatMs(r1?.split_ms) : null,
         goal: formatMs(r1?.goal_ms),
         updatedAt: toIsoTimestamp(r1?.updated_at || r1?.created_at),
+        faster: hasBothGoals ? Number(r1.goal_ms) < Number(r2.goal_ms) : false,
       },
       r2: {
         split: settings.showSplit ? formatMs(r2?.split_ms) : null,
         goal: formatMs(r2?.goal_ms),
         updatedAt: toIsoTimestamp(r2?.updated_at || r2?.created_at),
+        faster: hasBothGoals ? Number(r2.goal_ms) < Number(r1.goal_ms) : false,
       },
+      delta: formatSignedDeltaMs(deltaMs),
       best: row.best_goal_ms !== undefined ? formatMs(row.best_goal_ms) : '--.---',
       highlight: false,
       highlightUpdatedAt: toIsoTimestamp(latestRun?.updated_at || latestRun?.created_at),

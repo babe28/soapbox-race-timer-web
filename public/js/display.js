@@ -115,6 +115,7 @@
     document.getElementById('thR1Goal').textContent = labels.r1Goal || 'R1-Goal';
     document.getElementById('thR2Split').textContent = labels.r2Split || 'R2-Sec';
     document.getElementById('thR2Goal').textContent = labels.r2Goal || 'R2-Goal';
+    document.getElementById('thDelta').textContent = labels.delta || 'Diff';
     document.getElementById('thBest').textContent = labels.best || 'Best';
 
     document.getElementById('eventName').textContent = data.header?.eventName || '-';
@@ -175,6 +176,7 @@
           <td class="race-col" data-cell="r1goal"></td>
           <td class="cell-split race-col" data-cell="r2split"></td>
           <td class="race-col" data-cell="r2goal"></td>
+          <td class="cell-delta race-col" data-cell="delta"></td>
           <td class="cell-best race-col" data-cell="best"></td>
         `;
         rowElements.set(key, tr);
@@ -204,9 +206,10 @@
     setCell(tr, 'memo', row.memo || '');
     setCell(tr, 'practice', row.practice || '--.---', enteredClass(row.practiceUpdatedAt));
     setCell(tr, 'r1split', row.r1?.split || '--.---', enteredClass(row.r1?.updatedAt));
-    setCell(tr, 'r1goal', row.r1?.goal || '--.---', enteredClass(row.r1?.updatedAt));
+    setCell(tr, 'r1goal', row.r1?.goal || '--.---', `${enteredClass(row.r1?.updatedAt)} ${row.r1?.faster ? 'time-faster' : ''}`.trim());
     setCell(tr, 'r2split', row.r2?.split || '--.---', enteredClass(row.r2?.updatedAt));
-    setCell(tr, 'r2goal', row.r2?.goal || '--.---', enteredClass(row.r2?.updatedAt));
+    setCell(tr, 'r2goal', row.r2?.goal || '--.---', `${enteredClass(row.r2?.updatedAt)} ${row.r2?.faster ? 'time-faster' : ''}`.trim());
+    setCell(tr, 'delta', row.delta || '--.---');
     setCell(tr, 'best', row.best || '--.---', bestClass(row.bestUpdatedAt));
   }
 
@@ -223,8 +226,9 @@
     }
 
     td.textContent = value;
-    td.classList.toggle('time-entered', extraClass === 'time-entered');
-    td.classList.toggle('time-best', extraClass === 'time-best');
+    td.classList.toggle('time-entered', extraClass.includes('time-entered'));
+    td.classList.toggle('time-best', extraClass.includes('time-best'));
+    td.classList.toggle('time-faster', extraClass.includes('time-faster'));
   }
 
   function enteredClass(updatedAt) {

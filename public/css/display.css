@@ -110,6 +110,11 @@ body.display-body {
   font-weight: 800;
   text-shadow: 0 0 14px rgba(255, 233, 111, 0.38);
 }
+.results-table tbody td.time-faster {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
 .results-table .cell-run-status {
   background: transparent !important;
   border-top: none;
@@ -183,6 +188,7 @@ body.display-body {
 .col-practice { width: 140px; }
 .col-split { width: 124px; }
 .col-goal { width: 140px; }
+.col-delta { width: 120px; }
 .col-best { width: 140px; }
 .display-footer {
   display: grid;
