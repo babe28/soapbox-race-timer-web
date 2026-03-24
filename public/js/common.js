@@ -24,5 +24,13 @@ window.SoapboxCommon = {
       host: window.location.host || `${hostname}:${port}`,
       origin: window.location.origin || `${protocol}//${hostname}:${port}`,
     };
+  },
+
+  async loadAssignedServerAddresses() {
+    const res = await fetch('/api/settings/server-addresses', { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('Failed to load server addresses');
+    }
+    return res.json();
   }
 };

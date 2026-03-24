@@ -2,6 +2,7 @@ const express = require('express');
 const { getSettings, updateSettings } = require('../services/settingsService');
 const { validateLanguage } = require('../services/validation');
 const { VALID_REQUEST_LOG_MODES } = require('../services/serverLogService');
+const { listServerIpv4Addresses } = require('../services/networkService');
 const { resetDb, clearRunsOnly } = require('../db');
 const { getDisplayCurrent } = require('../services/displayService');
 const { listAuditLogs, clearAuditLogs } = require('../services/auditService');
@@ -46,6 +47,7 @@ function getApiCatalog() {
     { method: 'GET', path: '/api/settings/logs', description: 'Read audit logs' },
     { method: 'POST', path: '/api/settings/clear-logs', description: 'Delete audit logs only' },
     { method: 'GET', path: '/api/settings/clients', description: 'Read connected client activity' },
+    { method: 'GET', path: '/api/settings/server-addresses', description: 'Read assigned server IPv4 addresses' },
     { method: 'GET', path: '/api/settings/apis', description: 'Read API catalog' },
     { method: 'GET', path: '/api/entries', description: 'List entries' },
     { method: 'POST', path: '/api/entries', description: 'Create entry' },
@@ -102,6 +104,14 @@ function createSettingsRouter(db, wsHub, clientTracker) {
 
   router.get('/clients', (_req, res) => {
     res.json(clientTracker?.listClients?.() || []);
+  });
+
+  router.get('/server-addresses', (_req, res) => {
+    res.json({
+      host: req.get('host') || '',
+      origin: `${req.protocol}://${req.get('host') || ''}`,
+      ipv4: listServerIpv4Addresses(),
+    });
   });
 
   router.post('/clear-logs', (_req, res) => {

@@ -35,6 +35,7 @@ function bindSettingsElements() {
   settingsEls.reloadLogsBtn = document.getElementById('reloadLogsBtn');
   settingsEls.reloadApisBtn = document.getElementById('reloadApisBtn');
   settingsEls.serverAddress = document.getElementById('settingsServerAddress');
+  settingsEls.serverAddressList = document.getElementById('settingsServerAddressList');
 }
 
 function bindSettingsEvents() {
@@ -278,8 +279,37 @@ function renderCurrentSettings(data) {
 
 function renderServerAddress() {
   if (!settingsEls.serverAddress) return;
-  const info = window.SoapboxCommon?.getServerAddressInfo?.();
-  settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || 'Unknown';
+  window.SoapboxCommon?.loadAssignedServerAddresses?.()
+    .then((data) => {
+      const ipv4 = data?.ipv4 || [];
+      if (ipv4.length) {
+        settingsEls.serverAddress.textContent = ipv4.map((row) => row.address).join(', ');
+        if (settingsEls.serverAddressList) {
+          settingsEls.serverAddressList.hidden = false;
+          settingsEls.serverAddressList.innerHTML = ipv4.map((row) => `
+            <div class="server-address-item">
+              <span>${escapeHtml(row.name || 'LAN')}</span>
+              <strong>${escapeHtml(row.address || '-')}</strong>
+            </div>
+          `).join('');
+        }
+        return;
+      }
+
+      settingsEls.serverAddress.textContent = data?.origin || window.location.origin || window.location.host || 'Unknown';
+      if (settingsEls.serverAddressList) {
+        settingsEls.serverAddressList.hidden = true;
+        settingsEls.serverAddressList.innerHTML = '';
+      }
+    })
+    .catch(() => {
+      const info = window.SoapboxCommon?.getServerAddressInfo?.();
+      settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || 'Unknown';
+      if (settingsEls.serverAddressList) {
+        settingsEls.serverAddressList.hidden = true;
+        settingsEls.serverAddressList.innerHTML = '';
+      }
+    });
 }
 
 function renderAuditLogs(rows) {
