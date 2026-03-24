@@ -37,13 +37,17 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'display_sort_mode')) {
       db.exec("ALTER TABLE settings ADD COLUMN display_sort_mode TEXT NOT NULL DEFAULT 'time'");
     }
+    if (!settingsColumns.some((column) => column.name === 'request_log_mode')) {
+      db.exec("ALTER TABLE settings ADD COLUMN request_log_mode TEXT NOT NULL DEFAULT 'writes'");
+    }
 
     const settingsTable = db.prepare(`
       SELECT sql
       FROM sqlite_master
       WHERE type = 'table' AND name = 'settings'
     `).get();
-    if (settingsTable?.sql && !settingsTable.sql.includes('rows_per_page IN (19, 20, 30, 35, 40)')) {
+    if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (19, 20, 30, 35, 40)')
+      || !settingsTable.sql.includes('request_log_mode'))) {
       db.exec(`
         ALTER TABLE settings RENAME TO settings_old;
         CREATE TABLE settings (
@@ -54,6 +58,8 @@ function initDb(db) {
           rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (19, 20, 30, 35, 40)),
           display_sort_mode TEXT NOT NULL DEFAULT 'time'
               CHECK (display_sort_mode IN ('time', 'bib')),
+          request_log_mode TEXT NOT NULL DEFAULT 'writes'
+              CHECK (request_log_mode IN ('off', 'errors', 'writes', 'all')),
           show_kana INTEGER NOT NULL DEFAULT 1,
           show_car_no INTEGER NOT NULL DEFAULT 1,
           show_practice INTEGER NOT NULL DEFAULT 1,
@@ -70,7 +76,7 @@ function initDb(db) {
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         INSERT INTO settings (
-          id, event_name, class_name, language, rows_per_page, display_sort_mode,
+          id, event_name, class_name, language, rows_per_page, display_sort_mode, request_log_mode,
           show_kana, show_car_no, show_practice, show_memo, show_split,
           show_clock, show_last_update, show_overall_best, overall_best_include_practice,
           show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
@@ -78,6 +84,7 @@ function initDb(db) {
         SELECT
           id, event_name, class_name, language, rows_per_page,
           COALESCE(display_sort_mode, 'time'),
+          COALESCE(request_log_mode, 'writes'),
           show_kana, show_car_no, show_practice,
           COALESCE(show_memo, 0), show_split,
           show_clock, show_last_update, show_overall_best,

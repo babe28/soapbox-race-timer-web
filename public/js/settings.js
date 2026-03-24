@@ -25,6 +25,7 @@ function bindSettingsElements() {
   settingsEls.overallBestIncludePractice = document.getElementById('overallBestIncludePractice');
   settingsEls.showEffects = document.getElementById('showEffects');
   settingsEls.memoTitle = document.getElementById('memoTitle');
+  settingsEls.clientList = document.getElementById('clientList');
   settingsEls.currentSettings = document.getElementById('currentSettings');
   settingsEls.auditLogs = document.getElementById('auditLogs');
   settingsEls.apiCatalog = document.getElementById('apiCatalog');
@@ -33,6 +34,7 @@ function bindSettingsElements() {
   settingsEls.exportCsvBtn = document.getElementById('exportCsvBtn');
   settingsEls.reloadLogsBtn = document.getElementById('reloadLogsBtn');
   settingsEls.reloadApisBtn = document.getElementById('reloadApisBtn');
+  settingsEls.serverAddress = document.getElementById('settingsServerAddress');
 }
 
 function bindSettingsEvents() {
@@ -47,7 +49,8 @@ function bindSettingsEvents() {
 }
 
 async function loadAll() {
-  await Promise.all([loadSettings(), loadAuditLogs(), loadApiCatalog()]);
+  renderServerAddress();
+  await Promise.all([loadSettings(), loadAuditLogs(), loadApiCatalog(), loadClients()]);
 }
 
 async function loadSettings() {
@@ -76,6 +79,10 @@ function applySettingsToForm(data) {
   document.querySelectorAll('input[name="displaySortMode"]').forEach((radio) => {
     radio.checked = radio.value === displaySortMode;
   });
+  const requestLogMode = String(data.requestLogMode ?? 'writes');
+  document.querySelectorAll('input[name="requestLogMode"]').forEach((radio) => {
+    radio.checked = radio.value === requestLogMode;
+  });
 
   settingsEls.showKana.checked = Boolean(data.showKana);
   settingsEls.showCarNo.checked = Boolean(data.showCarNo);
@@ -99,6 +106,7 @@ async function saveSettings(event) {
     language: settingsEls.language.value,
     rowsPerPage: Number(document.querySelector('input[name="rowsPerPage"]:checked')?.value || 20),
     displaySortMode: document.querySelector('input[name="displaySortMode"]:checked')?.value || 'time',
+    requestLogMode: document.querySelector('input[name="requestLogMode"]:checked')?.value || 'writes',
     showKana: settingsEls.showKana.checked,
     showCarNo: settingsEls.showCarNo.checked,
     showPractice: settingsEls.showPractice.checked,
@@ -223,6 +231,17 @@ async function loadApiCatalog() {
   }
 }
 
+async function loadClients() {
+  try {
+    const res = await fetch('/api/settings/clients', { cache: 'no-store' });
+    const data = await res.json();
+    renderClients(data || []);
+  } catch (err) {
+    console.error(err);
+    settingsEls.clientList.innerHTML = '<div class="api-row"><span>Failed to load clients</span></div>';
+  }
+}
+
 function renderCurrentSettings(data) {
   const rowsPerPageLabel = Number(data.rowsPerPage) === 19
     ? '19 (slide)'
@@ -234,6 +253,7 @@ function renderCurrentSettings(data) {
     ['Language', data.language ?? ''],
     ['Rows Per Page', rowsPerPageLabel],
     ['Display Sort', data.displaySortMode ?? 'time'],
+    ['Server Log Output', data.requestLogMode ?? 'writes'],
     ['Show Kana', boolText(data.showKana)],
     ['Show Car No', boolText(data.showCarNo)],
     ['Show Practice', boolText(data.showPractice)],
@@ -254,6 +274,12 @@ function renderCurrentSettings(data) {
       <strong>${escapeHtml(String(value))}</strong>
     </div>
   `).join('');
+}
+
+function renderServerAddress() {
+  if (!settingsEls.serverAddress) return;
+  const info = window.SoapboxCommon?.getServerAddressInfo?.();
+  settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || 'Unknown';
 }
 
 function renderAuditLogs(rows) {
@@ -280,6 +306,22 @@ function renderApiCatalog(rows) {
     <div class="api-row">
       <strong><span class="api-method">${escapeHtml(row.method)}</span> <code>${escapeHtml(row.path)}</code></strong>
       <span>${escapeHtml(row.description || '')}</span>
+    </div>
+  `).join('');
+}
+
+function renderClients(rows) {
+  if (!settingsEls.clientList) return;
+  if (!rows.length) {
+    settingsEls.clientList.innerHTML = '<div class="api-row"><span>No clients yet</span></div>';
+    return;
+  }
+
+  settingsEls.clientList.innerHTML = rows.map((row) => `
+    <div class="api-row">
+      <strong>${escapeHtml(row.ip || '-')} <code>${escapeHtml((row.transports || []).join(', ') || '-')}</code></strong>
+      <span>${escapeHtml(row.lastSeenAt || '-')} / ${escapeHtml(row.lastPath || '-')}</span>
+      <span>${escapeHtml(row.userAgent || '-')}</span>
     </div>
   `).join('');
 }

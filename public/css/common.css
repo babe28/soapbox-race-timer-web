@@ -66,6 +66,24 @@ label span {
   gap: 12px;
   margin-top: 20px;
 }
+.server-address-card {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0c1426;
+}
+.server-address-card .label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.server-address-card .value {
+  font-size: 18px;
+  font-weight: 700;
+  word-break: break-all;
+}
 .link-list a, .ghost-button {
   display: inline-flex;
   align-items: center;

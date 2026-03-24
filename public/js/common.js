@@ -10,5 +10,19 @@ window.SoapboxCommon = {
       return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
     }
     return `${seconds}.${String(millis).padStart(3, '0')}`;
+  },
+
+  getServerAddressInfo() {
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname || 'localhost';
+    const defaultPort = protocol === 'https:' ? '443' : '80';
+    const port = window.location.port || defaultPort;
+    return {
+      protocol,
+      hostname,
+      port,
+      host: window.location.host || `${hostname}:${port}`,
+      origin: window.location.origin || `${protocol}//${hostname}:${port}`,
+    };
   }
 };

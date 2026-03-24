@@ -1,6 +1,7 @@
 const express = require('express');
 const { getSettings, updateSettings } = require('../services/settingsService');
 const { validateLanguage } = require('../services/validation');
+const { VALID_REQUEST_LOG_MODES } = require('../services/serverLogService');
 const { resetDb, clearRunsOnly } = require('../db');
 const { getDisplayCurrent } = require('../services/displayService');
 const { listAuditLogs, clearAuditLogs } = require('../services/auditService');
@@ -44,6 +45,7 @@ function getApiCatalog() {
     { method: 'GET', path: '/api/settings/export/results.csv', description: 'Export current results as CSV' },
     { method: 'GET', path: '/api/settings/logs', description: 'Read audit logs' },
     { method: 'POST', path: '/api/settings/clear-logs', description: 'Delete audit logs only' },
+    { method: 'GET', path: '/api/settings/clients', description: 'Read connected client activity' },
     { method: 'GET', path: '/api/settings/apis', description: 'Read API catalog' },
     { method: 'GET', path: '/api/entries', description: 'List entries' },
     { method: 'POST', path: '/api/entries', description: 'Create entry' },
@@ -65,7 +67,7 @@ function getApiCatalog() {
   ];
 }
 
-function createSettingsRouter(db, wsHub) {
+function createSettingsRouter(db, wsHub, clientTracker) {
   const router = express.Router();
 
   router.get('/', (_req, res) => {
@@ -75,6 +77,9 @@ function createSettingsRouter(db, wsHub) {
   router.put('/', (req, res) => {
     if (req.body?.language !== undefined && !validateLanguage(req.body.language)) {
       return res.status(400).json({ error: 'language must be ja or en' });
+    }
+    if (req.body?.requestLogMode !== undefined && !VALID_REQUEST_LOG_MODES.has(req.body.requestLogMode)) {
+      return res.status(400).json({ error: 'requestLogMode is invalid' });
     }
     const result = updateSettings(db, req.body || {});
     wsHub.broadcast('settings_updated');
@@ -93,6 +98,10 @@ function createSettingsRouter(db, wsHub) {
   router.get('/logs', (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     res.json(listAuditLogs(db, limit));
+  });
+
+  router.get('/clients', (_req, res) => {
+    res.json(clientTracker?.listClients?.() || []);
   });
 
   router.post('/clear-logs', (_req, res) => {

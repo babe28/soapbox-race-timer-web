@@ -5,6 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const { createDb, initDb } = require('./db');
+const { createClientTracker } = require('./services/clientTracker');
+const { shouldSkipRequestLog } = require('./services/serverLogService');
 const { createWsHub } = require('./ws/hub');
 const { createSettingsRouter } = require('./routes/settings');
 const { createHeatsRouter } = require('./routes/heats');
@@ -19,12 +21,18 @@ const DB_PATH = path.resolve(process.env.DB_PATH || path.join(process.cwd(), 'da
 
 const db = createDb(DB_PATH);
 initDb(db);
+const clientTracker = createClientTracker();
 
 const app = express();
+app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
+app.use((req, _res, next) => {
+  clientTracker.recordHttp(req);
+  next();
+});
 app.use(morgan('dev', {
-  skip: (req, res) => req.method === 'GET' && res.statusCode < 400,
+  skip: (req, res) => shouldSkipRequestLog(db, req, res),
 }));
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -41,9 +49,9 @@ app.get('/control', (req, res) => {
 });
 
 const server = http.createServer(app);
-const wsHub = createWsHub(server);
+const wsHub = createWsHub(server, clientTracker);
 
-app.use('/api/settings', createSettingsRouter(db, wsHub));
+app.use('/api/settings', createSettingsRouter(db, wsHub, clientTracker));
 app.use('/api/heats', createHeatsRouter(db, wsHub));
 app.use('/api/entries', createEntriesRouter(db, wsHub));
 app.use('/api/runs', createRunsRouter(db, wsHub));

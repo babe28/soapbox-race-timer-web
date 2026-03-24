@@ -66,6 +66,14 @@
               <label class="radio-card"><input type="radio" name="displaySortMode" value="bib" /> <span>Entry No</span></label>
             </div>
 
+            <div class="radio-card-group full-width">
+              <span class="field-label">Server Log Output</span>
+              <label class="radio-card"><input type="radio" name="requestLogMode" value="off" /> <span>OFF</span></label>
+              <label class="radio-card"><input type="radio" name="requestLogMode" value="errors" /> <span>Errors Only</span></label>
+              <label class="radio-card"><input type="radio" name="requestLogMode" value="writes" /> <span>Write Requests</span></label>
+              <label class="radio-card"><input type="radio" name="requestLogMode" value="all" /> <span>All Requests</span></label>
+            </div>
+
             <div class="check-grid full-width">
               <label class="check-card"><input type="checkbox" id="showKana" /> <span>Show Kana</span></label>
               <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>Show Car No</span></label>
@@ -95,6 +103,13 @@
 
       <section class="panel">
         <div class="panel-section">
+          <div class="section-title">Server</div>
+          <div class="server-address-card" style="margin-top:0;">
+            <span class="label">Server Address</span>
+            <strong class="value" id="settingsServerAddress">Loading...</strong>
+          </div>
+        </div>
+        <div class="panel-section">
           <div class="section-title">Current Settings</div>
           <div class="current-settings" id="currentSettings"></div>
         </div>
@@ -117,6 +132,12 @@
         <div class="panel-section">
           <div class="section-title">API Catalog</div>
           <div class="api-list" id="apiCatalog">
+            <div class="api-row"><span>Loading...</span></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">Connected Clients</div>
+          <div class="api-list" id="clientList">
             <div class="api-row"><span>Loading...</span></div>
           </div>
         </div>

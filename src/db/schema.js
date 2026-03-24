@@ -10,6 +10,8 @@ const schemaStatements = [
       rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (19, 20, 30, 35, 40)),
       display_sort_mode TEXT NOT NULL DEFAULT 'time'
           CHECK (display_sort_mode IN ('time', 'bib')),
+      request_log_mode TEXT NOT NULL DEFAULT 'writes'
+          CHECK (request_log_mode IN ('off', 'errors', 'writes', 'all')),
       show_kana INTEGER NOT NULL DEFAULT 1,
       show_car_no INTEGER NOT NULL DEFAULT 1,
       show_practice INTEGER NOT NULL DEFAULT 1,

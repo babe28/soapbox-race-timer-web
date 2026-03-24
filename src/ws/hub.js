@@ -1,4 +1,4 @@
-function createWsHub(server) {
+function createWsHub(server, clientTracker) {
   const { WebSocketServer } = require('ws');
   const wss = new WebSocketServer({ server, path: '/ws' });
 
@@ -9,7 +9,8 @@ function createWsHub(server) {
     }
   }
 
-  wss.on('connection', (socket) => {
+  wss.on('connection', (socket, req) => {
+    clientTracker?.recordWs?.(req);
     socket.send(JSON.stringify({ type: 'connected' }));
   });
 
