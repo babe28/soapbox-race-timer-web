@@ -224,11 +224,15 @@ async function loadApiCatalog() {
 }
 
 function renderCurrentSettings(data) {
+  const rowsPerPageLabel = Number(data.rowsPerPage) === 19
+    ? '19 (slide)'
+    : `${data.rowsPerPage ?? 20}`;
+
   const rows = [
     ['Event Name', data.eventName ?? ''],
     ['Class Name', data.className ?? ''],
     ['Language', data.language ?? ''],
-    ['Rows Per Page', `${data.rowsPerPage ?? 20}`],
+    ['Rows Per Page', rowsPerPageLabel],
     ['Display Sort', data.displaySortMode ?? 'time'],
     ['Show Kana', boolText(data.showKana)],
     ['Show Car No', boolText(data.showCarNo)],

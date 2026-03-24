@@ -9,13 +9,16 @@
   let ws = null;
   let wsReconnectTimer = null;
   let localConnectionOk = true;
-  // 単位はミリ秒です。1000 = 1秒。
-  // 行全体の明滅時間。保存や更新が入った行を見つけやすくします。
+  let currentPageIndex = 0;
+  let lastPageSignature = '';
+  let lastPageAdvanceAt = 0;
+
+  // Durations are in milliseconds. 1000 = 1 second.
   const ROW_HIGHLIGHT_MS = 12000;
-  // タイム欄そのものを点滅させる時間。入力直後のタイム確認用です。
   const TIME_FLASH_MS = 16000;
-  // ベスト欄の色を変えて残す時間。少し長めにして更新を追いやすくします。
   const BEST_MARK_MS = 22000;
+  const SLIDE_MODE_PAGE_SIZE = 19;
+  const SLIDE_MODE_PAGE_MS = 7000;
 
   async function loadDisplay() {
     const requestId = ++pollRequestId;
@@ -136,9 +139,11 @@
 
     renderConnection(localConnectionOk && !!data.connection?.connected);
 
-    body.classList.toggle('mode-30', data.settings?.rowsPerPage === 30);
-    body.classList.toggle('mode-35', data.settings?.rowsPerPage === 35);
-    body.classList.toggle('mode-40', data.settings?.rowsPerPage === 40);
+    const rowsPerPage = Number(data.settings?.rowsPerPage || 20);
+    body.classList.toggle('mode-19-slide', rowsPerPage === 19);
+    body.classList.toggle('mode-30', rowsPerPage === 30);
+    body.classList.toggle('mode-35', rowsPerPage === 35);
+    body.classList.toggle('mode-40', rowsPerPage === 40);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
     body.classList.toggle('practice-only', data.mode === 'practice');
     body.classList.toggle('hide-kana', !data.settings?.showKana);
@@ -149,14 +154,70 @@
     body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
     body.classList.toggle('hide-overall-best', !data.settings?.showOverallBest);
 
-    syncRows(data.rows || []);
+    syncRows(resolveVisibleRows(data.rows || [], rowsPerPage));
   }
 
-  function syncRows(rows) {
+  function resolveVisibleRows(rows, rowsPerPage) {
+    if (rowsPerPage !== SLIDE_MODE_PAGE_SIZE) {
+      currentPageIndex = 0;
+      lastPageSignature = '';
+      lastPageAdvanceAt = 0;
+      body.dataset.page = '1';
+      body.dataset.pageCount = '1';
+      return { rows, animatePage: false };
+    }
+
+    const pages = chunkRows(rows, SLIDE_MODE_PAGE_SIZE);
+    if (!pages.length) {
+      currentPageIndex = 0;
+      lastPageSignature = '';
+      lastPageAdvanceAt = 0;
+      body.dataset.page = '1';
+      body.dataset.pageCount = '1';
+      return { rows: [], animatePage: false };
+    }
+
+    const signature = pages.map((page) => page.map((row) => row.bibNo).join(',')).join('|');
+    let pageChanged = false;
+    if (signature !== lastPageSignature) {
+      currentPageIndex = 0;
+      lastPageSignature = signature;
+      lastPageAdvanceAt = Date.now();
+      pageChanged = true;
+    } else if (currentPageIndex >= pages.length) {
+      currentPageIndex = 0;
+      lastPageAdvanceAt = Date.now();
+      pageChanged = true;
+    } else if (pages.length > 1 && (Date.now() - lastPageAdvanceAt) >= SLIDE_MODE_PAGE_MS) {
+      currentPageIndex = (currentPageIndex + 1) % pages.length;
+      lastPageAdvanceAt = Date.now();
+      pageChanged = true;
+    }
+
+    body.dataset.page = String(currentPageIndex + 1);
+    body.dataset.pageCount = String(pages.length);
+
+    return {
+      rows: pages[currentPageIndex],
+      animatePage: pageChanged,
+    };
+  }
+
+  function chunkRows(rows, size) {
+    const pages = [];
+    for (let index = 0; index < rows.length; index += size) {
+      pages.push(rows.slice(index, index + size));
+    }
+    return pages;
+  }
+
+  function syncRows(view) {
+    const rows = view.rows || [];
+    const animatePage = Boolean(view.animatePage);
     const tbody = document.getElementById('resultsBody');
     const seenKeys = new Set();
 
-    for (const row of rows) {
+    rows.forEach((row, index) => {
       const key = String(row.bibNo ?? row.name ?? '');
       seenKeys.add(key);
 
@@ -183,8 +244,17 @@
       }
 
       updateRow(tr, row);
+      if (animatePage) {
+        tr.classList.remove('page-slide-in');
+        void tr.offsetWidth;
+        tr.style.setProperty('--row-enter-delay', `${index * 45}ms`);
+        tr.classList.add('page-slide-in');
+      } else {
+        tr.classList.remove('page-slide-in');
+        tr.style.removeProperty('--row-enter-delay');
+      }
       tbody.appendChild(tr);
-    }
+    });
 
     for (const [key, tr] of rowElements.entries()) {
       if (seenKeys.has(key)) continue;
