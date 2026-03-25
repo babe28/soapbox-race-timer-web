@@ -44,6 +44,7 @@ function bindSettingsElements() {
   settingsEls.reloadApisBtn = document.getElementById('reloadApisBtn');
   settingsEls.serverAddress = document.getElementById('settingsServerAddress');
   settingsEls.serverAddressList = document.getElementById('settingsServerAddressList');
+  settingsEls.serverOrigin = document.getElementById('settingsServerOrigin');
 }
 
 function bindSettingsEvents() {
@@ -249,11 +250,14 @@ async function loadClients() {
 
 function renderServerAddress() {
   if (!settingsEls.serverAddress) return;
+
   window.SoapboxCommon?.loadAssignedServerAddresses?.()
     .then((data) => {
-      const ipv4 = data?.ipv4 || [];
-      if (ipv4.length) {
-        settingsEls.serverAddress.textContent = ipv4.map((row) => row.address).join(', ');
+      const ipv4 = Array.isArray(data?.ipv4) ? data.ipv4 : [];
+      const addresses = ipv4.map((row) => row.address).filter(Boolean);
+
+      if (addresses.length) {
+        settingsEls.serverAddress.textContent = addresses.join(', ');
         if (settingsEls.serverAddressList) {
           settingsEls.serverAddressList.hidden = false;
           settingsEls.serverAddressList.innerHTML = ipv4.map((row) => `
@@ -263,21 +267,29 @@ function renderServerAddress() {
             </div>
           `).join('');
         }
-        return;
+      } else {
+        settingsEls.serverAddress.textContent = '利用可能な IPv4 アドレスが見つかりません';
+        if (settingsEls.serverAddressList) {
+          settingsEls.serverAddressList.hidden = true;
+          settingsEls.serverAddressList.innerHTML = '';
+        }
       }
 
-      settingsEls.serverAddress.textContent = data?.origin || window.location.origin || window.location.host || '不明';
-      if (settingsEls.serverAddressList) {
-        settingsEls.serverAddressList.hidden = true;
-        settingsEls.serverAddressList.innerHTML = '';
+      if (settingsEls.serverOrigin) {
+        const hostText = data?.listenHost ? `待受ホスト: ${data.listenHost}` : '';
+        const originText = data?.origin ? `アクセス元: ${data.origin}` : '';
+        settingsEls.serverOrigin.textContent = [originText, hostText].filter(Boolean).join(' / ') || 'アクセス元を確認できませんでした';
       }
     })
     .catch(() => {
       const info = window.SoapboxCommon?.getServerAddressInfo?.();
-      settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || '不明';
+      settingsEls.serverAddress.textContent = 'IPv4 アドレスの取得に失敗しました';
       if (settingsEls.serverAddressList) {
         settingsEls.serverAddressList.hidden = true;
         settingsEls.serverAddressList.innerHTML = '';
+      }
+      if (settingsEls.serverOrigin) {
+        settingsEls.serverOrigin.textContent = `アクセス元: ${info?.origin || window.location.origin || window.location.host || '不明'}`;
       }
     });
 }

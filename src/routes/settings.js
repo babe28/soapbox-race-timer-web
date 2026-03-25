@@ -106,10 +106,11 @@ function createSettingsRouter(db, wsHub, clientTracker) {
     res.json(clientTracker?.listClients?.() || []);
   });
 
-  router.get('/server-addresses', (_req, res) => {
+  router.get('/server-addresses', (req, res) => {
     res.json({
       host: req.get('host') || '',
       origin: `${req.protocol}://${req.get('host') || ''}`,
+      listenHost: process.env.HOST || '0.0.0.0',
       ipv4: listServerIpv4Addresses(),
     });
   });
