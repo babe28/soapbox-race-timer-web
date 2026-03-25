@@ -122,6 +122,7 @@
     document.getElementById('thBest').textContent = labels.best || 'Best';
 
     document.getElementById('eventName').textContent = data.header?.eventName || '-';
+    document.getElementById('className').textContent = data.header?.className || '';
     document.getElementById('heatNo').textContent = data.header?.heat ? String(data.header.heat) : '-';
     document.getElementById('statusText').textContent = data.header?.status || '-';
     document.getElementById('lastUpdate').textContent = data.header?.lastUpdate || '-';
@@ -150,6 +151,7 @@
     body.classList.toggle('hide-car', !data.settings?.showCarNo);
     body.classList.toggle('hide-memo', !data.settings?.showMemo);
     body.classList.toggle('hide-practice', !data.settings?.showPractice && data.mode !== 'practice');
+    body.classList.toggle('hide-delta', !data.settings?.showDelta);
     body.classList.toggle('hide-clock', !data.settings?.showClock);
     body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
     body.classList.toggle('hide-overall-best', !data.settings?.showOverallBest);

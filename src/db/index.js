@@ -40,6 +40,9 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'request_log_mode')) {
       db.exec("ALTER TABLE settings ADD COLUMN request_log_mode TEXT NOT NULL DEFAULT 'writes'");
     }
+    if (!settingsColumns.some((column) => column.name === 'show_delta')) {
+      db.exec('ALTER TABLE settings ADD COLUMN show_delta INTEGER NOT NULL DEFAULT 1');
+    }
 
     const settingsTable = db.prepare(`
       SELECT sql
@@ -47,7 +50,8 @@ function initDb(db) {
       WHERE type = 'table' AND name = 'settings'
     `).get();
     if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (19, 20, 30, 35, 40)')
-      || !settingsTable.sql.includes('request_log_mode'))) {
+      || !settingsTable.sql.includes('request_log_mode')
+      || !settingsTable.sql.includes('show_delta'))) {
       db.exec(`
         ALTER TABLE settings RENAME TO settings_old;
         CREATE TABLE settings (
@@ -65,6 +69,7 @@ function initDb(db) {
           show_practice INTEGER NOT NULL DEFAULT 1,
           show_memo INTEGER NOT NULL DEFAULT 0,
           show_split INTEGER NOT NULL DEFAULT 1,
+          show_delta INTEGER NOT NULL DEFAULT 1,
           show_clock INTEGER NOT NULL DEFAULT 1,
           show_last_update INTEGER NOT NULL DEFAULT 1,
           show_overall_best INTEGER NOT NULL DEFAULT 1,
@@ -77,7 +82,7 @@ function initDb(db) {
         );
         INSERT INTO settings (
           id, event_name, class_name, language, rows_per_page, display_sort_mode, request_log_mode,
-          show_kana, show_car_no, show_practice, show_memo, show_split,
+          show_kana, show_car_no, show_practice, show_memo, show_split, show_delta,
           show_clock, show_last_update, show_overall_best, overall_best_include_practice,
           show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
         )
@@ -86,7 +91,7 @@ function initDb(db) {
           COALESCE(display_sort_mode, 'time'),
           COALESCE(request_log_mode, 'writes'),
           show_kana, show_car_no, show_practice,
-          COALESCE(show_memo, 0), show_split,
+          COALESCE(show_memo, 0), show_split, COALESCE(show_delta, 1),
           show_clock, show_last_update, show_overall_best,
           COALESCE(overall_best_include_practice, 0),
           show_effects, COALESCE(memo_title, 'Memo'), auto_backup_interval_min, created_at, updated_at

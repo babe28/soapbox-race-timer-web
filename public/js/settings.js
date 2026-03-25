@@ -28,6 +28,7 @@ function bindSettingsElements() {
   settingsEls.showPractice = document.getElementById('showPractice');
   settingsEls.showMemo = document.getElementById('showMemo');
   settingsEls.showSplit = document.getElementById('showSplit');
+  settingsEls.showDelta = document.getElementById('showDelta');
   settingsEls.showClock = document.getElementById('showClock');
   settingsEls.showLastUpdate = document.getElementById('showLastUpdate');
   settingsEls.showOverallBest = document.getElementById('showOverallBest');
@@ -98,6 +99,7 @@ function applySettingsToForm(data) {
   settingsEls.showPractice.checked = Boolean(data.showPractice);
   settingsEls.showMemo.checked = Boolean(data.showMemo);
   settingsEls.showSplit.checked = Boolean(data.showSplit);
+  settingsEls.showDelta.checked = Boolean(data.showDelta);
   settingsEls.showClock.checked = Boolean(data.showClock);
   settingsEls.showLastUpdate.checked = Boolean(data.showLastUpdate);
   settingsEls.showOverallBest.checked = Boolean(data.showOverallBest);
@@ -121,6 +123,7 @@ async function saveSettings(event) {
     showPractice: settingsEls.showPractice.checked,
     showMemo: settingsEls.showMemo.checked,
     showSplit: settingsEls.showSplit.checked,
+    showDelta: settingsEls.showDelta.checked,
     showClock: settingsEls.showClock.checked,
     showLastUpdate: settingsEls.showLastUpdate.checked,
     showOverallBest: settingsEls.showOverallBest.checked,

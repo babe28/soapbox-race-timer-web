@@ -308,6 +308,7 @@ function getDisplayCurrent(db) {
       }),
       overallBest: formatMs(overallBest?.goal_ms),
       eventName: settings.eventName,
+      className: settings.className,
     },
     settings,
     mode: practiceOnly ? 'practice' : 'race',

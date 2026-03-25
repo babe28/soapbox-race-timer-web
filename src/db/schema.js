@@ -17,6 +17,7 @@ const schemaStatements = [
       show_practice INTEGER NOT NULL DEFAULT 1,
       show_memo INTEGER NOT NULL DEFAULT 0,
       show_split INTEGER NOT NULL DEFAULT 1,
+      show_delta INTEGER NOT NULL DEFAULT 1,
       show_clock INTEGER NOT NULL DEFAULT 1,
       show_last_update INTEGER NOT NULL DEFAULT 1,
       show_overall_best INTEGER NOT NULL DEFAULT 1,
