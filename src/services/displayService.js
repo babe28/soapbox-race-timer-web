@@ -100,40 +100,40 @@ function formatSignedDeltaMs(value) {
   const sign = ms >= 0 ? '+' : '-';
   return `${sign}${formatMs(Math.abs(ms))}`;
 }
-//　日本語表示切り替え部分Unicodeエスケープしてます
+// 日本語表示は UTF-8 の生文字を使い、Unicode エスケープを避ける。
 function getLanguagePack(language, practiceOnly) {
   const isJa = language === 'ja';
   return {
     labels: {
-      pos: practiceOnly ? (isJa ? '\u7df4\u7fd2\u8d70\u884c\u9806\u4f4d' : 'Practice Rank') : (isJa ? '\u9806\u4f4d' : 'Pos'),
-      runStatus: isJa ? '\u72b6\u614b' : 'Status',
+      pos: practiceOnly ? (isJa ? '練習走行順位' : 'Practice Rank') : (isJa ? '順位' : 'Pos'),
+      runStatus: isJa ? '状態' : 'Status',
       no: 'No',
-      name: isJa ? '\u9078\u624b\u540d' : 'Name',
-      kana: isJa ? '\u304b\u306a' : 'Kana',
-      car: isJa ? '\u8eca\u756a' : 'Car',
-      memo: isJa ? '\u30e1\u30e2' : 'Memo',
-      practice: isJa ? '\u7df4\u7fd2' : 'Practice',
-      r1Split: isJa ? 'R1\u4e2d\u9593' : 'R1-Sec',
-      r1Goal: isJa ? 'R1\u30b4\u30fc\u30eb' : 'R1-Goal',
-      r2Split: isJa ? 'R2\u4e2d\u9593' : 'R2-Sec',
-      r2Goal: isJa ? 'R2\u30b4\u30fc\u30eb' : 'R2-Goal',
-      delta: isJa ? '\u5dee\u5206' : 'Diff',
-      best: isJa ? '\u30d9\u30b9\u30c8' : 'Best',
-      event: isJa ? '\u5927\u4F1A\u540D' : 'Event',
-      heat: isJa ? '\u30d2\u30fc\u30c8' : 'Heat',
-      status: isJa ? '\u72b6\u614b' : 'Status',
-      lastUpdate: isJa ? '\u66f4\u65b0\u6642\u523b' : 'Last Update',
-      clock: isJa ? '\u73fe\u5728\u6642\u523b' : 'Clock',
-      overallBest: isJa ? '\u5168\u4f53\u30d9\u30b9\u30c8' : 'Overall Best',
-      nowRunning: isJa ? '\u8d70\u884c\u4e2d' : 'Now Running',
-      next: isJa ? '\u6b21\u8d70' : 'Next',
-      connection: isJa ? '\u63a5\u7d9a' : 'Connection',
+      name: isJa ? '選手名' : 'Name',
+      kana: isJa ? 'かな' : 'Kana',
+      car: isJa ? '車番' : 'Car',
+      memo: isJa ? 'メモ' : 'Memo',
+      practice: isJa ? '練習' : 'Practice',
+      r1Split: isJa ? 'R1中間' : 'R1-Sec',
+      r1Goal: isJa ? 'R1ゴール' : 'R1-Goal',
+      r2Split: isJa ? 'R2中間' : 'R2-Sec',
+      r2Goal: isJa ? 'R2ゴール' : 'R2-Goal',
+      delta: isJa ? '差分' : 'Diff',
+      best: isJa ? 'ベスト' : 'Best',
+      event: isJa ? '大会名' : 'Event',
+      heat: isJa ? 'ヒート' : 'Heat',
+      status: isJa ? '状態' : 'Status',
+      lastUpdate: isJa ? '更新時刻' : 'Last Update',
+      clock: isJa ? '現在時刻' : 'Clock',
+      overallBest: isJa ? '全体ベスト' : 'Overall Best',
+      nowRunning: isJa ? '走行中' : 'Now Running',
+      next: isJa ? '次走' : 'Next',
+      connection: isJa ? '接続' : 'Connection',
     },
     status: {
-      waiting: isJa ? '\u5f85\u6a5f\u4e2d' : 'WAITING',
-      preparing: isJa ? '\u6e96\u5099\u4e2d' : 'PREPARING',
-      running: isJa ? '\u8d70\u884c\u4e2d' : 'RUNNING',
-      finished: isJa ? '\u7d42\u4e86' : 'FINISHED',
+      waiting: isJa ? '待機中' : 'WAITING',
+      preparing: isJa ? '準備中' : 'PREPARING',
+      running: isJa ? '走行中' : 'RUNNING',
+      finished: isJa ? '終了' : 'FINISHED',
     },
   };
 }

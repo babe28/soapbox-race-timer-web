@@ -1,5 +1,14 @@
 const settingsEls = {};
 
+const API_CATEGORY_LABELS = {
+  system: 'システム',
+  settings: '設定',
+  entries: 'エントリー',
+  runs: '走行データ',
+  display: '表示',
+  control: 'レース操作',
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   bindSettingsElements();
   bindSettingsEvents();
@@ -26,7 +35,6 @@ function bindSettingsElements() {
   settingsEls.showEffects = document.getElementById('showEffects');
   settingsEls.memoTitle = document.getElementById('memoTitle');
   settingsEls.clientList = document.getElementById('clientList');
-  settingsEls.currentSettings = document.getElementById('currentSettings');
   settingsEls.auditLogs = document.getElementById('auditLogs');
   settingsEls.apiCatalog = document.getElementById('apiCatalog');
   settingsEls.reloadSettingsBtn = document.getElementById('reloadSettingsBtn');
@@ -59,10 +67,9 @@ async function loadSettings() {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     const data = await res.json();
     applySettingsToForm(data);
-    renderCurrentSettings(data);
   } catch (err) {
     console.error(err);
-    alert('Failed to load settings');
+    alert('設定の読み込みに失敗しました');
   }
 }
 
@@ -95,7 +102,7 @@ function applySettingsToForm(data) {
   settingsEls.showOverallBest.checked = Boolean(data.showOverallBest);
   settingsEls.overallBestIncludePractice.checked = Boolean(data.overallBestIncludePractice);
   settingsEls.showEffects.checked = Boolean(data.showEffects);
-  settingsEls.memoTitle.value = data.memoTitle ?? 'Memo';
+  settingsEls.memoTitle.value = data.memoTitle ?? 'メモ';
 }
 
 async function saveSettings(event) {
@@ -118,7 +125,7 @@ async function saveSettings(event) {
     showOverallBest: settingsEls.showOverallBest.checked,
     overallBestIncludePractice: settingsEls.overallBestIncludePractice.checked,
     showEffects: settingsEls.showEffects.checked,
-    memoTitle: settingsEls.memoTitle.value.trim() || 'Memo',
+    memoTitle: settingsEls.memoTitle.value.trim() || 'メモ',
     autoBackupIntervalMin: Number(settingsEls.autoBackupIntervalMin.value || 5),
   };
 
@@ -130,20 +137,19 @@ async function saveSettings(event) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || 'Failed to save settings');
+      alert(data.error || '設定の保存に失敗しました');
       return;
     }
     applySettingsToForm(data);
-    renderCurrentSettings(data);
-    alert('Settings saved');
+    alert('設定を保存しました');
   } catch (err) {
     console.error(err);
-    alert('Failed to save settings');
+    alert('設定の保存に失敗しました');
   }
 }
 
 async function resetDatabase() {
-  if (!window.confirm('Initialize the database? All heats, entries, and runs will be deleted.')) {
+  if (!window.confirm('データベースを初期化しますか？ ヒート、エントリー、走行データが削除されます。')) {
     return;
   }
 
@@ -151,21 +157,20 @@ async function resetDatabase() {
     const res = await fetch('/api/settings/reset-db', { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || 'Failed to initialize database');
+      alert(data.error || 'データベースの初期化に失敗しました');
       return;
     }
     applySettingsToForm(data.settings || {});
-    renderCurrentSettings(data.settings || {});
     await loadAuditLogs();
-    alert('Database initialized');
+    alert('データベースを初期化しました');
   } catch (err) {
     console.error(err);
-    alert('Failed to initialize database');
+    alert('データベースの初期化に失敗しました');
   }
 }
 
 async function clearRunsOnly() {
-  if (!window.confirm('Delete runs only? Entries and heats will remain.')) {
+  if (!window.confirm('走行タイムだけを削除しますか？ エントリーとヒートは残ります。')) {
     return;
   }
 
@@ -173,21 +178,20 @@ async function clearRunsOnly() {
     const res = await fetch('/api/settings/clear-runs', { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || 'Failed to clear runs');
+      alert(data.error || 'タイムの削除に失敗しました');
       return;
     }
     applySettingsToForm(data.settings || {});
-    renderCurrentSettings(data.settings || {});
     await loadAuditLogs();
-    alert('Runs cleared');
+    alert('走行タイムを削除しました');
   } catch (err) {
     console.error(err);
-    alert('Failed to clear runs');
+    alert('タイムの削除に失敗しました');
   }
 }
 
 async function clearLogsOnly() {
-  if (!window.confirm('Delete audit logs only?')) {
+  if (!window.confirm('操作ログだけを削除しますか？')) {
     return;
   }
 
@@ -195,14 +199,14 @@ async function clearLogsOnly() {
     const res = await fetch('/api/settings/clear-logs', { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || 'Failed to clear audit logs');
+      alert(data.error || '操作ログの削除に失敗しました');
       return;
     }
     await loadAuditLogs();
-    alert('Audit logs cleared');
+    alert('操作ログを削除しました');
   } catch (err) {
     console.error(err);
-    alert('Failed to clear audit logs');
+    alert('操作ログの削除に失敗しました');
   }
 }
 
@@ -217,7 +221,7 @@ async function loadAuditLogs() {
     renderAuditLogs(data || []);
   } catch (err) {
     console.error(err);
-    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>Failed to load logs</span></div>';
+    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>操作ログの読み込みに失敗しました</span></div>';
   }
 }
 
@@ -228,7 +232,7 @@ async function loadApiCatalog() {
     renderApiCatalog(data || []);
   } catch (err) {
     console.error(err);
-    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>Failed to load API catalog</span></div>';
+    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>API一覧の読み込みに失敗しました</span></div>';
   }
 }
 
@@ -239,42 +243,8 @@ async function loadClients() {
     renderClients(data || []);
   } catch (err) {
     console.error(err);
-    settingsEls.clientList.innerHTML = '<div class="api-row"><span>Failed to load clients</span></div>';
+    settingsEls.clientList.innerHTML = '<div class="api-row"><span>接続クライアントの読み込みに失敗しました</span></div>';
   }
-}
-
-function renderCurrentSettings(data) {
-  const rowsPerPageLabel = Number(data.rowsPerPage) === 19
-    ? '19 (slide)'
-    : `${data.rowsPerPage ?? 20}`;
-
-  const rows = [
-    ['Event Name', data.eventName ?? ''],
-    ['Class Name', data.className ?? ''],
-    ['Language', data.language ?? ''],
-    ['Rows Per Page', rowsPerPageLabel],
-    ['Display Sort', data.displaySortMode ?? 'time'],
-    ['Server Log Output', data.requestLogMode ?? 'writes'],
-    ['Show Kana', boolText(data.showKana)],
-    ['Show Car No', boolText(data.showCarNo)],
-    ['Show Practice', boolText(data.showPractice)],
-    ['Show Memo', boolText(data.showMemo)],
-    ['Show Split', boolText(data.showSplit)],
-    ['Show Clock', boolText(data.showClock)],
-    ['Show Last Update', boolText(data.showLastUpdate)],
-    ['Show Overall Best', boolText(data.showOverallBest)],
-    ['Overall Best Includes Practice', boolText(data.overallBestIncludePractice)],
-    ['Show Effects', boolText(data.showEffects)],
-    ['Memo Column Title', data.memoTitle ?? 'Memo'],
-    ['Auto Backup Interval', `${data.autoBackupIntervalMin ?? 5} min`],
-  ];
-
-  settingsEls.currentSettings.innerHTML = rows.map(([label, value]) => `
-    <div class="current-row">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(String(value))}</strong>
-    </div>
-  `).join('');
 }
 
 function renderServerAddress() {
@@ -296,7 +266,7 @@ function renderServerAddress() {
         return;
       }
 
-      settingsEls.serverAddress.textContent = data?.origin || window.location.origin || window.location.host || 'Unknown';
+      settingsEls.serverAddress.textContent = data?.origin || window.location.origin || window.location.host || '不明';
       if (settingsEls.serverAddressList) {
         settingsEls.serverAddressList.hidden = true;
         settingsEls.serverAddressList.innerHTML = '';
@@ -304,7 +274,7 @@ function renderServerAddress() {
     })
     .catch(() => {
       const info = window.SoapboxCommon?.getServerAddressInfo?.();
-      settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || 'Unknown';
+      settingsEls.serverAddress.textContent = info?.origin || window.location.origin || window.location.host || '不明';
       if (settingsEls.serverAddressList) {
         settingsEls.serverAddressList.hidden = true;
         settingsEls.serverAddressList.innerHTML = '';
@@ -314,7 +284,7 @@ function renderServerAddress() {
 
 function renderAuditLogs(rows) {
   if (!rows.length) {
-    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>No audit logs yet</span></div>';
+    settingsEls.auditLogs.innerHTML = '<div class="log-row"><span>まだ操作ログはありません</span></div>';
     return;
   }
 
@@ -328,14 +298,18 @@ function renderAuditLogs(rows) {
 
 function renderApiCatalog(rows) {
   if (!rows.length) {
-    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>No APIs found</span></div>';
+    settingsEls.apiCatalog.innerHTML = '<div class="api-row"><span>APIは見つかりませんでした</span></div>';
     return;
   }
 
   settingsEls.apiCatalog.innerHTML = rows.map((row) => `
     <div class="api-row">
-      <strong><span class="api-method">${escapeHtml(row.method)}</span> <code>${escapeHtml(row.path)}</code></strong>
+      <div class="api-summary">
+        <strong><span class="api-method">${escapeHtml(row.method)}</span> <code>${escapeHtml(row.path)}</code></strong>
+        <span class="api-note">${escapeHtml(API_CATEGORY_LABELS[row.category] || 'その他')}</span>
+      </div>
       <span>${escapeHtml(row.description || '')}</span>
+      <span>${escapeHtml(row.notes || '')}</span>
     </div>
   `).join('');
 }
@@ -343,7 +317,7 @@ function renderApiCatalog(rows) {
 function renderClients(rows) {
   if (!settingsEls.clientList) return;
   if (!rows.length) {
-    settingsEls.clientList.innerHTML = '<div class="api-row"><span>No clients yet</span></div>';
+    settingsEls.clientList.innerHTML = '<div class="api-row"><span>まだ接続クライアントはありません</span></div>';
     return;
   }
 
@@ -354,10 +328,6 @@ function renderClients(rows) {
       <span>${escapeHtml(row.userAgent || '-')}</span>
     </div>
   `).join('');
-}
-
-function boolText(value) {
-  return value ? 'ON' : 'OFF';
 }
 
 function escapeHtml(value) {
