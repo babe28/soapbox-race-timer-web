@@ -48,6 +48,14 @@ app.get('/control', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/control.html'));
 });
 
+app.get('/driver-overlay', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/driver-overlay.html'));
+});
+
+app.get('/fastest', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/fastest.html'));
+});
+
 const server = http.createServer(app);
 const wsHub = createWsHub(server, clientTracker);
 

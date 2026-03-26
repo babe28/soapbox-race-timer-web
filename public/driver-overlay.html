@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soap Box Derby Driver Overlay</title>
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/driver-overlay.css" />
+</head>
+<body class="driver-overlay-body">
+  <main class="driver-overlay-shell" id="driverOverlayApp">
+    <section class="overlay-card overlay-card-driver">
+      <span class="overlay-label">走行ドライバー</span>
+      <strong class="overlay-value overlay-driver-name" id="overlayDriverName">-</strong>
+      <span class="overlay-subvalue" id="overlayDriverBib">No.-</span>
+    </section>
+
+    <section class="overlay-card overlay-card-split">
+      <span class="overlay-label">中間タイム</span>
+      <strong class="overlay-value overlay-time" id="overlaySplitTime">--.---</strong>
+      <span class="overlay-subvalue" id="overlaySplitStatus">WAITING</span>
+    </section>
+
+    <section class="overlay-card overlay-card-goal">
+      <span class="overlay-label">ゴールタイム</span>
+      <strong class="overlay-value overlay-time" id="overlayGoalTime">--.---</strong>
+      <span class="overlay-subvalue" id="overlayGoalStatus">WAITING</span>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/driver-overlay.js"></script>
+</body>
+</html>

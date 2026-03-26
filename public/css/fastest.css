@@ -1,0 +1,30 @@
+body.fastest-body {
+  width: 400px;
+  min-width: 400px;
+  height: 120px;
+  min-height: 120px;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.fastest-shell {
+  width: 400px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.fastest-value {
+  display: block;
+  color: #ffffff;
+  font-size: 88px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+}

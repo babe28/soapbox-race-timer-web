@@ -7,6 +7,7 @@ let preferredSelectedEntryId = null;
 let ws = null;
 let wsReconnectTimer = null;
 let externalTimerNoticeTimer = null;
+let overlayPreviewSyncTimer = null;
 
 const fmt = window.SoapboxCommon?.formatMs || ((v) => String(v ?? '-'));
 const RUN_TYPE_STORAGE_KEY = 'soapbox:lastRunType';
@@ -20,8 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function bindEvents() {
   document.getElementById('saveBtn')?.addEventListener('click', saveRun);
+  document.getElementById('nextBtn')?.addEventListener('click', moveToNextDriver);
   document.getElementById('saveNextBtn')?.addEventListener('click', saveAndNext);
   document.getElementById('resetBtn')?.addEventListener('click', () => clearRunForm(false));
+  document.getElementById('splitTime')?.addEventListener('input', scheduleOverlayPreviewSync);
+  document.getElementById('goalTime')?.addEventListener('input', scheduleOverlayPreviewSync);
+  document.getElementById('runStatus')?.addEventListener('change', scheduleOverlayPreviewSync);
 
   document.getElementById('nowCard')?.addEventListener('click', () => {
     if (controlState?.nowRunningEntry) setSelectedEntry(controlState.nowRunningEntry);
@@ -119,11 +124,11 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
       : null;
 
     if (queueSelected) {
-      setSelectedEntry(queueSelected, false);
+      setSelectedEntry(queueSelected, false, false);
     } else if (data.selectedEntry?.id) {
-      setSelectedEntry(data.selectedEntry, false);
+      setSelectedEntry(data.selectedEntry, false, false);
     } else {
-      clearSelectedEntry();
+      clearSelectedEntry(false);
     }
 
     preferredSelectedEntryId = selectedEntry?.id ?? null;
@@ -157,7 +162,8 @@ function connectWs() {
       const message = JSON.parse(event.data);
       if (message.type === 'state_update'
         || message.type === 'entry_updated'
-        || message.type === 'run_updated') {
+        || message.type === 'run_updated'
+        || message.type === 'overlay_preview_updated') {
         loadControlState();
         return;
       }
@@ -218,6 +224,9 @@ function render(data) {
   document.querySelectorAll('[data-status]').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.status === data.status);
   });
+
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.disabled = !selectedEntry?.id && !data.nextEntry?.id;
 }
 
 function applyExternalTimerInput(message) {
@@ -230,6 +239,7 @@ function applyExternalTimerInput(message) {
   const goalInput = document.getElementById('goalTime');
   if (splitInput) splitInput.value = message.splitTime || '';
   if (goalInput) goalInput.value = message.goalTime || '';
+  scheduleOverlayPreviewSync();
   showExternalTimerStatus(
     `No.${selectedEntry.bibNo ?? '-'} ${selectedEntry.name ?? ''} に外部タイムを入力しました。 Split ${message.splitTime} / Goal ${message.goalTime}`,
     'success',
@@ -248,7 +258,7 @@ function showExternalTimerStatus(message, tone = 'success') {
   }, 7000);
 }
 
-function setSelectedEntry(entry, fillForm = true) {
+function setSelectedEntry(entry, fillForm = true, syncPreview = true) {
   if (!entry) return;
 
   preferredSelectedEntryId = entry.id;
@@ -275,6 +285,8 @@ function setSelectedEntry(entry, fillForm = true) {
     const carInput = document.getElementById('carNoAtRun');
     if (carInput) carInput.value = entry.carNo ?? '';
   }
+
+  if (syncPreview) scheduleOverlayPreviewSync();
 }
 
 async function loadEntryHistory(entryId) {
@@ -288,7 +300,7 @@ async function loadEntryHistory(entryId) {
   }
 }
 
-function clearSelectedEntry() {
+function clearSelectedEntry(syncPreview = true) {
   selectedEntry = null;
   preferredSelectedEntryId = null;
   document.getElementById('selName').textContent = '-';
@@ -298,6 +310,7 @@ function clearSelectedEntry() {
   document.getElementById('selOrder').textContent = 'Order -';
   renderHistory([]);
   renderQueueList();
+  if (syncPreview) scheduleOverlayPreviewSync();
 }
 
 function renderHistory(runs) {
@@ -428,6 +441,7 @@ async function saveRun() {
 
   setRunType(runType);
   await loadControlState(selectedEntry.id);
+  scheduleOverlayPreviewSync();
   return true;
 }
 
@@ -435,19 +449,7 @@ async function saveAndNext() {
   const currentEntryId = selectedEntry?.id ?? null;
   const ok = await saveRun();
   if (!ok) return;
-
-  if (currentEntryId) {
-    await postJson('/api/control/action/set-now', { entryId: currentEntryId });
-  }
-  await postJson('/api/control/action/move-next', {});
-  clearRunForm(false);
-  const data = await loadControlState(null);
-  const nextTarget = data?.nowRunningEntry?.id && data.nowRunningEntry.id !== currentEntryId
-    ? data.nowRunningEntry
-    : data?.nextEntry || data?.nowRunningEntry || null;
-  if (nextTarget) {
-    setSelectedEntry(nextTarget);
-  }
+  await moveToNextDriver(currentEntryId);
 }
 
 function clearRunForm(resetRunType = false) {
@@ -458,6 +460,7 @@ function clearRunForm(resetRunType = false) {
   const status = document.getElementById('runStatus');
   if (status) status.value = 'finished';
   if (resetRunType) setRunType('race1');
+  scheduleOverlayPreviewSync();
 }
 
 function parseTimeInput(value, label) {
@@ -516,6 +519,48 @@ function restoreRunType() {
     stored = 'race1';
   }
   setRunType(stored);
+}
+
+function scheduleOverlayPreviewSync() {
+  clearTimeout(overlayPreviewSyncTimer);
+  overlayPreviewSyncTimer = setTimeout(() => {
+    syncOverlayPreview().catch((err) => {
+      console.error(err);
+    });
+  }, 120);
+}
+
+async function syncOverlayPreview() {
+  if (!selectedEntry?.id) {
+    await postJson('/api/control/overlay-preview', {});
+    return;
+  }
+
+  const splitResult = parseTimeInput(document.getElementById('splitTime')?.value ?? '', 'Split Time');
+  const goalResult = parseTimeInput(document.getElementById('goalTime')?.value ?? '', 'Goal Time');
+
+  if (splitResult.error || goalResult.error) return;
+
+  const hasAnyValue = splitResult.ms !== null || goalResult.ms !== null;
+  await postJson('/api/control/overlay-preview', hasAnyValue ? {
+    entryId: selectedEntry.id,
+    splitMs: splitResult.ms,
+    goalMs: goalResult.ms,
+    status: document.getElementById('runStatus')?.value || 'finished',
+  } : {});
+}
+
+async function moveToNextDriver(currentEntryId = selectedEntry?.id ?? null) {
+  if (currentEntryId) {
+    await postJson('/api/control/action/set-now', { entryId: currentEntryId });
+  }
+  await postJson('/api/control/action/move-next', {});
+  clearRunForm(false);
+  const data = await loadControlState(null);
+  const nextTarget = data?.nowRunningEntry?.id && data.nowRunningEntry.id !== currentEntryId
+    ? data.nowRunningEntry
+    : data?.nextEntry || data?.nowRunningEntry || null;
+  if (nextTarget) setSelectedEntry(nextTarget);
 }
 
 function escapeHtml(value) {

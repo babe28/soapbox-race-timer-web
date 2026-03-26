@@ -1,5 +1,6 @@
 const { getSettings } = require('./settingsService');
 const { formatMs } = require('./formatters');
+const { getOverlayPreview } = require('./overlayPreviewService');
 
 function toIsoTimestamp(value) {
   if (!value) return null;
@@ -319,6 +320,7 @@ function getDisplayCurrent(db) {
     connection: {
       connected: (state?.connection_state || 'connected') === 'connected',
     },
+    overlayPreview: getOverlayPreview(),
   };
 }
 
@@ -452,6 +454,7 @@ function getControlState(db) {
     } : null,
 
     selectedEntryRuns,
+    overlayPreview: getOverlayPreview(),
     summary,
   };
 }

@@ -1,6 +1,7 @@
 const express = require('express');
 const { getControlState } = require('../services/displayService');
 const { logAudit } = require('../services/auditService');
+const { clearOverlayPreview, setOverlayPreview } = require('../services/overlayPreviewService');
 
 function normalizeExternalTimerValue(value, label) {
   const text = String(value ?? '').trim();
@@ -109,6 +110,7 @@ function createControlRouter(db, wsHub) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(entryId, nextId);
+    clearOverlayPreview();
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'set_now_running',
@@ -151,6 +153,7 @@ function createControlRouter(db, wsHub) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(newNowId, newNextId);
+    clearOverlayPreview();
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'set_now_running',
@@ -229,6 +232,24 @@ function createControlRouter(db, wsHub) {
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
+  });
+
+  router.post('/overlay-preview', (req, res) => {
+    const body = req.body || {};
+    const hasPreview = Number(body.entryId)
+      && (body.splitMs !== null || body.goalMs !== null || body.status);
+
+    const preview = hasPreview
+      ? setOverlayPreview({
+        entryId: body.entryId,
+        splitMs: body.splitMs,
+        goalMs: body.goalMs,
+        status: body.status,
+      })
+      : clearOverlayPreview();
+
+    wsHub.broadcast('overlay_preview_updated', preview);
+    res.json({ ok: true, preview });
   });
 
   return router;
