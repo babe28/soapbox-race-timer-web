@@ -1,6 +1,7 @@
 (async function () {
   const body = document.body;
   const app = document.getElementById('displayApp');
+  const isLiteMode = new URLSearchParams(window.location.search).get('mode') === 'lite';
   const rowElements = new Map();
   let pollTimer = null;
   let pollRequestId = 0;
@@ -17,13 +18,15 @@
   let lastPageAdvanceAt = 0;
 
   // Durations are in milliseconds. 1000 = 1 second.
-  const ROW_HIGHLIGHT_MS = 12000;
-  const TIME_FLASH_MS = 16000;
-  const BEST_MARK_MS = 22000;
+  const ROW_HIGHLIGHT_MS = 16000; //16sec
+  const TIME_FLASH_MS = 20000; //20sec
+  const BEST_MARK_MS = 30000; //30sec
   const SLIDE_MODE_PAGE_SIZE = 15;
   const DEFAULT_SLIDE_MODE_PAGE_MS = 7000;
   const CONNECTED_POLL_MS = 4000;
   const FALLBACK_POLL_MS = 1000;
+
+  body.classList.toggle('bs-lite', isLiteMode);
 
   function scheduleLoadDisplay(delay = 80) {
     clearTimeout(scheduledLoadTimer);
@@ -153,9 +156,13 @@
 
     const liveState = document.getElementById('liveState');
     if (liveState && shouldPulseLiveState) {
-      liveState.classList.remove('is-pulse');
-      void liveState.offsetWidth;
-      liveState.classList.add('is-pulse');
+      if (isLiteMode) {
+        liveState.classList.remove('is-pulse');
+      } else {
+        liveState.classList.remove('is-pulse');
+        void liveState.offsetWidth;
+        liveState.classList.add('is-pulse');
+      }
       shouldPulseLiveState = false;
     }
 
@@ -277,9 +284,13 @@
     }
 
     if (animatePage) {
-      tbody.classList.remove('page-slide-in');
-      void tbody.offsetWidth;
-      tbody.classList.add('page-slide-in');
+      if (isLiteMode) {
+        tbody.classList.remove('page-slide-in');
+      } else {
+        tbody.classList.remove('page-slide-in');
+        void tbody.offsetWidth;
+        tbody.classList.add('page-slide-in');
+      }
     } else {
       tbody.classList.remove('page-slide-in');
     }

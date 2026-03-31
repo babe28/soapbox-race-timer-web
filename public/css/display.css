@@ -192,6 +192,11 @@ body.display-body {
   background: linear-gradient(180deg, #ff7373 0%, #d63d45 100%);
   color: #ffffff;
 }
+.results-table .status-finished-plain {
+  background: transparent;
+  color: #ffffff;
+  box-shadow: none;
+}
 .results-table .status-pending {
   background: linear-gradient(180deg, #71b7ff 0%, #3777ea 100%);
 }
@@ -233,10 +238,10 @@ body.display-body {
 }
 .col-run-status { width: 76px; }
 .col-pos { width: 68px; }
-.col-no { width: 86px; }
-.col-name { width: 220px; }
-.col-kana { width: 160px; }
-.col-car { width: 90px; }
+.col-no { width: 80px; }
+.col-name { width: 226px; }
+.col-kana { width: 170px; }
+.col-car { width: 80px; }
 .col-memo { width: 210px; }
 .col-practice { width: 140px; }
 .col-split { width: 124px; }
@@ -403,8 +408,8 @@ body.mode-30 .results-table tbody td { font-size: 17px; padding: 6px 6px; }
 body.mode-30 .results-table .cell-kana,
 body.mode-30 .results-table .cell-memo { font-size: 13px; }
 body.mode-30 .results-table .status-flag { font-size: 10px; min-width: 44px; padding: 6px 7px 5px; }
-body.mode-30 .header-block .value { font-size: 24px; }
-body.mode-30 .header-event .event-name { font-size: 27px; }
+body.mode-30 .header-block .value { font-size: 30px; }
+body.mode-30 .header-event .event-name { font-size: 24px; }
 body.mode-30 .header-block .subvalue { font-size: 13px; }
 body.mode-30 .time-block .clock-value { font-size: 27px; }
 body.mode-30 .footer-value { font-size: 21px; }
@@ -472,3 +477,46 @@ body.hide-clock #labelClock { display: none; }
 body.hide-last-update .time-subvalue { display: none; }
 body.hide-clock.hide-last-update .time-block { display: none; }
 body.hide-overall-best .display-header .best-block { display: none; }
+
+body.bs-lite .display-shell {
+  background: linear-gradient(180deg, #050814 0%, #0a1020 48%, #080d17 100%);
+}
+
+body.bs-lite .header-block,
+body.bs-lite .results-table thead th,
+body.bs-lite .footer-block {
+  background-image: none;
+}
+
+body.bs-lite .header-block {
+  box-shadow: none;
+}
+
+body.bs-lite .results-table tbody tr.highlight td {
+  box-shadow: none;
+  -webkit-animation: none;
+  animation: none;
+}
+
+body.bs-lite .results-table tbody.page-slide-in,
+body.bs-lite .results-table tbody td.time-entered,
+body.bs-lite .footer-live.is-pulse {
+  -webkit-animation: none;
+  animation: none;
+}
+
+body.bs-lite .results-table tbody td.time-best,
+body.bs-lite .connection-ok {
+  text-shadow: none;
+}
+
+body.bs-lite .results-table .status-flag {
+  clip-path: none;
+  box-shadow: none;
+  border-radius: 6px;
+}
+
+body.bs-lite .footer-live {
+  background: #30d89a;
+  box-shadow: none;
+}

@@ -83,7 +83,7 @@ function buildRunIndexes(runs, practiceOnly) {
 function getRunStatusBadge(status) {
   switch (status) {
     case 'finished':
-      return { code: 'Finish', tone: 'finished' };
+      return { code: 'FINISH', tone: 'finished' };
     case 'pending':
       return { code: 'Ready', tone: 'pending' };
     case 'dq':
@@ -97,6 +97,29 @@ function getRunStatusBadge(status) {
     default:
       return { code: '', tone: 'empty' };
   }
+}
+
+function getDisplayStatusBadge(statusRun, practiceOnly, race1Run, race2Run) {
+  const latestStatus = statusRun?.status;
+  if (latestStatus !== 'finished') {
+    return getRunStatusBadge(latestStatus);
+  }
+
+  if (practiceOnly) {
+    return { code: 'FINISH', tone: 'finished-plain' };
+  }
+
+  const race1Finished = race1Run?.status === 'finished'
+    && race1Run?.goal_ms !== null
+    && race1Run?.goal_ms !== undefined;
+  const race2Finished = race2Run?.status === 'finished'
+    && race2Run?.goal_ms !== null
+    && race2Run?.goal_ms !== undefined;
+
+  return {
+    code: 'FINISH',
+    tone: race1Finished && race2Finished ? 'finished' : 'finished-plain',
+  };
 }
 
 function formatJstTime(value) {
@@ -321,7 +344,7 @@ function getDisplayCurrent(db) {
     const latestRun = runIndexes.latestDisplayByEntry.get(entryId);
     const bestRun = runIndexes.bestDisplayByEntry.get(entryId);
     const statusRun = runIndexes.latestStatusByEntry.get(entryId);
-    const statusBadge = row.rank_no ? getRunStatusBadge(statusRun?.status) : { code: '', tone: 'empty' };
+    const statusBadge = getDisplayStatusBadge(statusRun, practiceOnly, r1, r2);
 
     return {
       status: statusBadge.code,

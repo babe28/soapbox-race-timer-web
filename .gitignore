@@ -3,3 +3,8 @@ node_modules/
 data/
 .editorconfig
 .vscode/
+scripts/start-dev-server.sh
+scripts/start-dev-server.bat
+scripts/start-prod.ps1
+start-dev.bat
+start-prod.bat

@@ -262,7 +262,7 @@
   color: var(--muted);
 }
 .queue-list-compact {
-  max-height: 560px;
+  max-height: 680px;
   overflow: auto;
   padding-right: 6px;
 }
