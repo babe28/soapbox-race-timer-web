@@ -197,7 +197,7 @@ function getLanguagePack(language, practiceOnly) {
 function getDisplayCurrent(db) {
   const settings = getSettings(db);
   const state = db.prepare(`
-    SELECT ds.*, h.heat_no, h.code AS heat_code
+    SELECT ds.*, h.heat_no, h.code AS heat_code, h.title AS heat_title
     FROM display_state ds
     LEFT JOIN heats h ON h.id = ds.current_heat_id
     WHERE ds.id = 1
@@ -380,7 +380,7 @@ function getDisplayCurrent(db) {
 
   return {
     header: {
-      heat: state?.heat_code || state?.heat_no || null,
+      heat: state?.heat_title || null,
       status: i18n.status[state?.current_status || 'waiting'],
       lastUpdate: formatJstTime(state?.last_update_at),
       clock: new Date().toLocaleTimeString('ja-JP', {
@@ -408,7 +408,7 @@ function getControlState(db) {
   const settings = getSettings(db);
 
   const state = db.prepare(`
-    SELECT ds.*, h.heat_no, h.code AS heat_code
+    SELECT ds.*, h.heat_no, h.code AS heat_code, h.title AS heat_title
     FROM display_state ds
     LEFT JOIN heats h ON h.id = ds.current_heat_id
     WHERE ds.id = 1
@@ -484,7 +484,7 @@ function getControlState(db) {
   return {
     eventName: settings.eventName || 'Soap Box Derby',
     heatId: state?.current_heat_id ?? null,
-    heatNo: state?.heat_code || state?.heat_no || null,
+    heatNo: state?.heat_title || null,
     status: state?.current_status || 'waiting',
     starterReady: Boolean(state?.starter_ready),
     overallBest: overallBest?.goal_ms ?? null,
