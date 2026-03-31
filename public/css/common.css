@@ -68,6 +68,11 @@ button.primary {
   border-color: var(--accent);
   font-weight: 700;
 }
+button.danger-button {
+  background: rgba(255, 106, 125, 0.16);
+  border-color: rgba(255, 106, 125, 0.55);
+  color: var(--text);
+}
 button.active {
   outline: 2px solid var(--accent-2);
 }
@@ -119,6 +124,15 @@ label span {
   font-size: 18px;
   font-weight: 700;
   word-break: break-all;
+}
+.card-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.server-address-card .danger-button {
+  margin-top: 12px;
 }
 .server-address-list {
   display: grid;

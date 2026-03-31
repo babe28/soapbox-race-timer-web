@@ -100,6 +100,11 @@ function createControlRouter(db, wsHub, controlLockService) {
     res.json({ ok: result.ok, ...result.status });
   });
 
+  router.post('/lock/force-release', (_req, res) => {
+    const result = controlLockService.forceRelease();
+    res.json(result);
+  });
+
   router.post('/external-time', (req, res) => {
     const upperResult = normalizeExternalTimerValue(req.body?.upper, 'upper');
     const lowerResult = normalizeExternalTimerValue(req.body?.lower, 'lower');

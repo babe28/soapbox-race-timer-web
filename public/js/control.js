@@ -116,6 +116,10 @@ function bindEvents() {
 
   document.getElementById('entrySearch')?.addEventListener('input', renderQueueList);
   document.getElementById('historyBody')?.addEventListener('click', onHistoryClick);
+  document.getElementById('controlLockRetryBtn')?.addEventListener('click', () => {
+    ensureControlLock({ manual: true });
+  });
+  document.getElementById('controlLockForceBtn')?.addEventListener('click', forceUnlockAndAcquire);
 }
 
 async function postJson(url, body) {
@@ -146,9 +150,18 @@ function initializeControlSession() {
 }
 
 function showControlLockOverlay(message) {
+  showControlLockNotice(
+    message || '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。',
+    'Race Control はすでに開かれています',
+  );
+}
+
+function showControlLockNotice(message, title = 'Race Control はすでに開かれています') {
   document.body.classList.add('is-locked');
   const overlay = document.getElementById('controlLockOverlay');
+  const titleEl = document.getElementById('controlLockTitle');
   const messageEl = document.getElementById('controlLockMessage');
+  if (titleEl) titleEl.textContent = title;
   if (messageEl) {
     messageEl.textContent = message || '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。';
   }
@@ -158,6 +171,12 @@ function showControlLockOverlay(message) {
 function hideControlLockOverlay() {
   document.body.classList.remove('is-locked');
   const overlay = document.getElementById('controlLockOverlay');
+  const titleEl = document.getElementById('controlLockTitle');
+  const messageEl = document.getElementById('controlLockMessage');
+  if (titleEl) titleEl.textContent = 'Race Control はすでに開かれています';
+  if (messageEl) {
+    messageEl.textContent = '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。';
+  }
   if (overlay) overlay.hidden = true;
 }
 
@@ -188,9 +207,9 @@ function stopControlActivity() {
 }
 
 function startControlActivity() {
+  hideControlLockOverlay();
   if (controlActivated) return;
   controlActivated = true;
-  hideControlLockOverlay();
   loadControlState();
   connectWs();
 }
@@ -218,7 +237,10 @@ function startControlLockHeartbeat() {
         controlLockOwned = false;
         controlActivated = false;
         stopControlActivity();
-        showControlLockOverlay('別の画面が Race Control を使用しています。利用可能になり次第、この画面は自動で有効になります。');
+        showControlLockNotice(
+          '別の画面が Race Control を使用しています。利用可能になり次第、この画面は自動で有効になります。',
+          'Race Control のロックが失われました',
+        );
         scheduleControlLockRetry();
         return;
       }
@@ -229,7 +251,7 @@ function startControlLockHeartbeat() {
   }, CONTROL_LOCK_HEARTBEAT_MS);
 }
 
-async function ensureControlLock() {
+async function ensureControlLock(_options = {}) {
   clearTimeout(controlLockRetryTimer);
   try {
     const res = await fetch('/api/control/lock/acquire', {
@@ -239,10 +261,22 @@ async function ensureControlLock() {
     });
 
     if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
       controlLockOwned = false;
       controlActivated = false;
       stopControlActivity();
-      showControlLockOverlay('すでに別のブラウザで Race Control が開かれています。そちらを閉じると、この画面は自動で有効になります。');
+      if (json?.locked === false) {
+        showControlLockNotice(
+          'ロック状態の確認が競合したため、再取得を試しています。',
+          'Race Control を確認中です',
+        );
+        scheduleControlLockRetry(800);
+        return;
+      }
+      showControlLockNotice(
+        'すでに別のブラウザで Race Control が開かれています。必要なら「強制解放」で解除してください。',
+        'Race Control はすでに開かれています',
+      );
       scheduleControlLockRetry();
       return;
     }
@@ -254,8 +288,32 @@ async function ensureControlLock() {
     controlLockOwned = false;
     controlActivated = false;
     stopControlActivity();
-    showControlLockOverlay('Race Control のロック確認に失敗しました。接続を再確認しています。');
+    showControlLockNotice(
+      'Race Control のロック確認に失敗しました。サーバーに接続できているか確認してください。',
+      'Race Control に接続できません',
+    );
     scheduleControlLockRetry(3000);
+  }
+}
+
+async function forceUnlockAndAcquire() {
+  try {
+    const res = await fetch('/api/control/lock/force-release', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error('force release failed');
+    }
+    controlLockOwned = false;
+    controlActivated = false;
+    stopControlActivity();
+    await ensureControlLock({ manual: true });
+  } catch (_err) {
+    showControlLockNotice(
+      '強制解放に失敗しました。サーバー状態を確認してから再度お試しください。',
+      'Race Control を解放できません',
+    );
   }
 }
 

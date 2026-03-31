@@ -12,8 +12,12 @@
   <div class="control-shell" id="controlApp">
     <div class="control-lock-overlay" id="controlLockOverlay" hidden>
       <div class="control-lock-card">
-        <h2>Race Control はすでに開かれています</h2>
+        <h2 id="controlLockTitle">Race Control はすでに開かれています</h2>
         <p id="controlLockMessage">別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。</p>
+        <div class="control-lock-actions">
+          <button type="button" id="controlLockRetryBtn">再試行</button>
+          <button type="button" class="danger-button" id="controlLockForceBtn">強制解放</button>
+        </div>
       </div>
     </div>
     <header class="page-header">
@@ -192,6 +196,6 @@
   </div>
 
   <script src="/js/common.js"></script>
-  <script src="/js/control.js?v=1.0.1" defer></script>
+  <script src="/js/control.js?v=1.0.2" defer></script>
 </body>
 </html>

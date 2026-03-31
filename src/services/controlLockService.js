@@ -65,6 +65,13 @@ function createControlLockService() {
     return { ok: false, status: createSnapshot() };
   }
 
+  function forceRelease() {
+    pruneExpired();
+    const wasLocked = Boolean(activeLock);
+    activeLock = null;
+    return { ok: true, released: wasLocked, status: createSnapshot() };
+  }
+
   function status() {
     return createSnapshot();
   }
@@ -73,6 +80,7 @@ function createControlLockService() {
     acquire,
     heartbeat,
     release,
+    forceRelease,
     status,
   };
 }
