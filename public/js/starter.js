@@ -4,6 +4,12 @@
   let ws = null;
   let wsReconnectTimer = null;
   let currentState = null;
+  let lastSeenResultRunId = null;
+  let dismissedResultRunId = null;
+  let sliderPointerId = null;
+  let sliderStartX = 0;
+  let sliderBaseX = 0;
+  let sliderCurrentX = 0;
 
   document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
@@ -19,11 +25,47 @@
       });
     });
 
-    document.getElementById('starterReadyBtn')?.addEventListener('click', async () => {
-      const nextReady = !currentState?.starterReady;
+    document.getElementById('starterResultCloseBtn')?.addEventListener('click', closeResultPopup);
+    document.getElementById('starterFullscreenBtn')?.addEventListener('click', toggleFullscreen);
+    bindReadySlider();
+  }
+
+  function bindReadySlider() {
+    const slider = document.getElementById('starterReadySlider');
+    if (!slider) return;
+
+    slider.addEventListener('pointerdown', (event) => {
+      sliderPointerId = event.pointerId;
+      sliderStartX = event.clientX;
+      sliderBaseX = getSliderTargetX(Boolean(currentState?.starterReady));
+      sliderCurrentX = sliderBaseX;
+      slider.setPointerCapture(event.pointerId);
+    });
+
+    slider.addEventListener('pointermove', (event) => {
+      if (sliderPointerId !== event.pointerId) return;
+      const delta = event.clientX - sliderStartX;
+      const maxX = getSliderMaxX();
+      sliderCurrentX = clamp(sliderBaseX + delta, 0, maxX);
+      applySliderOffset(sliderCurrentX);
+    });
+
+    const finishSlide = async (event) => {
+      if (sliderPointerId !== event.pointerId) return;
+      try {
+        slider.releasePointerCapture(event.pointerId);
+      } catch (_err) {
+        // ignore release errors
+      }
+      sliderPointerId = null;
+      const maxX = getSliderMaxX();
+      const nextReady = maxX > 0 ? sliderCurrentX >= (maxX * 0.58) : Boolean(currentState?.starterReady);
       await postJson('/api/control/action/starter-ready', { ready: nextReady });
       await loadStarterState();
-    });
+    };
+
+    slider.addEventListener('pointerup', finishSlide);
+    slider.addEventListener('pointercancel', finishSlide);
   }
 
   async function postJson(url, body) {
@@ -68,7 +110,7 @@
     ws.addEventListener('message', (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === 'state_update') {
+        if (message.type === 'state_update' || message.type === 'run_updated') {
           loadStarterState();
         }
       } catch (_err) {
@@ -92,10 +134,6 @@
   }
 
   function render(data) {
-    document.getElementById('starterEventName').textContent = data.eventName || 'Soap Box Derby';
-    document.getElementById('starterHeatNo').textContent = data.heatNo ? `Heat ${data.heatNo}` : 'Heat -';
-    document.getElementById('starterLastUpdate').textContent = `Last update ${data.lastUpdate || '-'}`;
-    document.getElementById('starterCurrentStatus').textContent = String(data.status || 'waiting').toUpperCase();
     document.getElementById('starterNowRunning').textContent = formatEntry(data.nowRunningEntry);
     document.getElementById('starterNext').textContent = formatEntry(data.nextEntry);
 
@@ -104,17 +142,116 @@
     });
 
     const readyStateEl = document.getElementById('starterReadyState');
-    const readyBtnEl = document.getElementById('starterReadyBtn');
     const isReady = Boolean(data.starterReady);
     readyStateEl.textContent = isReady ? 'READY' : 'WAITING';
     readyStateEl.classList.toggle('is-ready', isReady);
     readyStateEl.classList.toggle('is-waiting', !isReady);
-    readyBtnEl.textContent = isReady ? 'スタート準備完了を解除' : 'スタート準備完了';
-    readyBtnEl.classList.toggle('is-ready', isReady);
+    syncReadySlider(isReady);
+
+    renderLatestResult(data.latestResult);
+  }
+
+  function syncReadySlider(isReady) {
+    const slider = document.getElementById('starterReadySlider');
+    if (!slider) return;
+    slider.dataset.ready = String(isReady);
+    slider.classList.toggle('is-ready', isReady);
+    applySliderOffset(getSliderTargetX(isReady));
+  }
+
+  function getSliderMaxX() {
+    const slider = document.getElementById('starterReadySlider');
+    const thumb = document.getElementById('starterReadyThumb');
+    if (!slider || !thumb) return 0;
+    return Math.max(slider.clientWidth - thumb.clientWidth - 16, 0);
+  }
+
+  function getSliderTargetX(isReady) {
+    return isReady ? getSliderMaxX() : 0;
+  }
+
+  function applySliderOffset(value) {
+    const thumb = document.getElementById('starterReadyThumb');
+    if (!thumb) return;
+    thumb.style.transform = `translateX(${value}px)`;
+  }
+
+  function renderLatestResult(result) {
+    if (!result?.runId) {
+      hideResultPopup();
+      return;
+    }
+
+    document.getElementById('starterResultName').textContent = `No.${result.bibNo} ${result.name}`;
+    document.getElementById('starterResultRank').textContent = result.provisionalRank ? `${result.provisionalRank}位` : '-';
+    document.getElementById('starterResultSplit').textContent = formatMs(result.splitMs);
+    document.getElementById('starterResultGoal').textContent = formatMs(result.goalMs);
+
+    if (lastSeenResultRunId === null) {
+      lastSeenResultRunId = result.runId;
+      hideResultPopup();
+      return;
+    }
+
+    const isNewResult = result.runId !== lastSeenResultRunId;
+    lastSeenResultRunId = result.runId;
+    if (isNewResult) {
+      dismissedResultRunId = null;
+    }
+
+    if (dismissedResultRunId === result.runId) {
+      hideResultPopup();
+      return;
+    }
+    showResultPopup();
+  }
+
+  function showResultPopup() {
+    const popup = document.getElementById('starterResultPopup');
+    if (popup) popup.hidden = false;
+  }
+
+  function hideResultPopup() {
+    const popup = document.getElementById('starterResultPopup');
+    if (popup) popup.hidden = true;
+  }
+
+  function closeResultPopup() {
+    const runId = currentState?.latestResult?.runId;
+    if (runId) dismissedResultRunId = runId;
+    hideResultPopup();
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      await document.documentElement.requestFullscreen();
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   function formatEntry(entry) {
     if (!entry?.id) return '-';
     return `No.${entry.bibNo} ${entry.name}`;
+  }
+
+  function formatMs(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+    const totalMs = Number(value);
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const milliseconds = totalMs % 1000;
+    if (minutes > 0) {
+      return `${minutes}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+    }
+    return `${seconds}.${String(milliseconds).padStart(3, '0')}`;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
   }
 })();

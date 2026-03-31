@@ -443,6 +443,7 @@ function render(data) {
     starterReadyEl.textContent = data.starterReady ? 'READY' : 'WAITING';
     starterReadyEl.classList.toggle('is-ready', Boolean(data.starterReady));
     starterReadyEl.classList.toggle('is-waiting', !data.starterReady);
+    starterReadyEl.closest('.starter-ready-item')?.classList.toggle('is-ready', Boolean(data.starterReady));
   }
   document.getElementById('ctrlOverallBest').textContent = fmt(data.overallBest);
   document.getElementById('ctrlLastUpdate').textContent = data.lastUpdate ?? '-';
