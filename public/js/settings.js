@@ -21,6 +21,7 @@ function bindSettingsElements() {
   settingsEls.className = document.getElementById('className');
   settingsEls.language = document.getElementById('language');
   settingsEls.autoBackupIntervalMin = document.getElementById('autoBackupIntervalMin');
+  settingsEls.slidePageSeconds = document.getElementById('slidePageSeconds');
   settingsEls.clearRunsBtn = document.getElementById('clearRunsBtn');
   settingsEls.clearLogsBtn = document.getElementById('clearLogsBtn');
   settingsEls.showKana = document.getElementById('showKana');
@@ -85,6 +86,7 @@ function applySettingsToForm(data) {
   document.querySelectorAll('input[name="rowsPerPage"]').forEach((radio) => {
     radio.checked = radio.value === rowsPerPage;
   });
+  settingsEls.slidePageSeconds.value = String(((Number(data.slidePageMs) || 7000) / 1000));
   const displaySortMode = String(data.displaySortMode ?? 'time');
   document.querySelectorAll('input[name="displaySortMode"]').forEach((radio) => {
     radio.checked = radio.value === displaySortMode;
@@ -116,6 +118,7 @@ async function saveSettings(event) {
     className: settingsEls.className.value.trim(),
     language: settingsEls.language.value,
     rowsPerPage: Number(document.querySelector('input[name="rowsPerPage"]:checked')?.value || 20),
+    slidePageMs: Math.round(Number(settingsEls.slidePageSeconds.value || 7) * 1000),
     displaySortMode: document.querySelector('input[name="displaySortMode"]:checked')?.value || 'time',
     requestLogMode: document.querySelector('input[name="requestLogMode"]:checked')?.value || 'writes',
     showKana: settingsEls.showKana.checked,

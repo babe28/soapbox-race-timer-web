@@ -112,15 +112,31 @@ body.driver-overlay-body {
 }
 
 .overlay-card.is-updated {
+  -webkit-animation: overlay-flash 1s ease-out;
   animation: overlay-flash 1s ease-out;
 }
 
-@keyframes overlay-flash {
+@-webkit-keyframes overlay-flash {
   0% {
+    -webkit-transform: scale(0.985);
     transform: scale(0.985);
     opacity: 0.92;
   }
   100% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-flash {
+  0% {
+    -webkit-transform: scale(0.985);
+    transform: scale(0.985);
+    opacity: 0.92;
+  }
+  100% {
+    -webkit-transform: scale(1);
     transform: scale(1);
     opacity: 1;
   }

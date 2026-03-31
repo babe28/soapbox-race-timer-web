@@ -80,6 +80,15 @@ function createSettingsRouter(db, wsHub, clientTracker) {
     if (req.body?.language !== undefined && !validateLanguage(req.body.language)) {
       return res.status(400).json({ error: 'language must be ja or en' });
     }
+    if (req.body?.rowsPerPage !== undefined && ![15, 20, 30, 35, 40].includes(Number(req.body.rowsPerPage))) {
+      return res.status(400).json({ error: 'rowsPerPage is invalid' });
+    }
+    if (req.body?.slidePageMs !== undefined) {
+      const slidePageMs = Number(req.body.slidePageMs);
+      if (!Number.isFinite(slidePageMs) || slidePageMs < 2000 || slidePageMs > 30000) {
+        return res.status(400).json({ error: 'slidePageMs must be between 2000 and 30000' });
+      }
+    }
     if (req.body?.requestLogMode !== undefined && !VALID_REQUEST_LOG_MODES.has(req.body.requestLogMode)) {
       return res.status(400).json({ error: 'requestLogMode is invalid' });
     }

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>設定</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
   <link rel="stylesheet" href="/css/common.css" />
   <link rel="stylesheet" href="/css/settings.css" />
 </head>
@@ -67,12 +68,19 @@
               <div class="radio-card-group full-width">
                 <span class="field-label">1ページの表示行数</span>
                 <div class="rows-per-page-grid">
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="19" /> <span>19行 + スライド</span></label>
+                <label class="radio-card"><input type="radio" name="rowsPerPage" value="15" /> <span>15行 + スライド</span></label>
                 <label class="radio-card"><input type="radio" name="rowsPerPage" value="20" /> <span>20行</span></label>
                 <label class="radio-card"><input type="radio" name="rowsPerPage" value="30" /> <span>30行</span></label>
                 <label class="radio-card"><input type="radio" name="rowsPerPage" value="35" /> <span>35行</span></label>
                 <label class="radio-card"><input type="radio" name="rowsPerPage" value="40" /> <span>40行</span></label>
                 </div>
+              </div>
+
+              <div class="group-grid group-grid-two">
+                <label>
+                  <span>スライド切替秒数</span>
+                  <input type="number" id="slidePageSeconds" min="2" max="30" step="0.5" />
+                </label>
               </div>
 
               <div class="group-grid group-grid-two compact-gap">
@@ -182,6 +190,6 @@
   </div>
 
   <script src="/js/common.js"></script>
-  <script src="/js/settings.js?v=1.0.0" defer></script>
+  <script src="/js/settings.js?v=1.0.1" defer></script>
 </body>
 </html>

@@ -5,6 +5,18 @@
   let currentPollController = null;
   let ws = null;
   let wsReconnectTimer = null;
+  let scheduledLoadTimer = null;
+  let wsConnected = false;
+  const CONNECTED_POLL_MS = 4000;
+  const FALLBACK_POLL_MS = 1000;
+
+  function scheduleLoadFastest(delay = 80) {
+    clearTimeout(scheduledLoadTimer);
+    scheduledLoadTimer = setTimeout(() => {
+      scheduledLoadTimer = null;
+      loadFastest();
+    }, delay);
+  }
 
   async function loadFastest() {
     const requestId = ++pollRequestId;
@@ -25,7 +37,7 @@
     } finally {
       if (requestId === pollRequestId) {
         clearTimeout(pollTimer);
-        pollTimer = setTimeout(loadFastest, 1000);
+        pollTimer = setTimeout(loadFastest, wsConnected ? CONNECTED_POLL_MS : FALLBACK_POLL_MS);
       }
     }
   }
@@ -52,15 +64,19 @@
         if (message.type === 'display_update'
           || message.type === 'run_updated'
           || message.type === 'state_update') {
-          loadFastest();
+          scheduleLoadFastest();
         }
       } catch (_err) {
         // ignore invalid websocket payloads
       }
     });
 
+    ws.addEventListener('open', () => {
+      wsConnected = true;
+    });
     ws.addEventListener('close', scheduleWsReconnect);
     ws.addEventListener('error', () => {
+      wsConnected = false;
       try {
         ws?.close();
       } catch (_err) {
@@ -71,6 +87,7 @@
 
   function scheduleWsReconnect() {
     clearTimeout(wsReconnectTimer);
+    wsConnected = false;
     wsReconnectTimer = setTimeout(connectWs, 1500);
   }
 

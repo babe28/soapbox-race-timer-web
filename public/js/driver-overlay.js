@@ -6,7 +6,19 @@
   let currentPollController = null;
   let ws = null;
   let wsReconnectTimer = null;
+  let scheduledLoadTimer = null;
+  let wsConnected = false;
   let lastSignature = '';
+  const CONNECTED_POLL_MS = 4000;
+  const FALLBACK_POLL_MS = 1000;
+
+  function scheduleLoadOverlay(delay = 80) {
+    clearTimeout(scheduledLoadTimer);
+    scheduledLoadTimer = setTimeout(() => {
+      scheduledLoadTimer = null;
+      loadOverlay();
+    }, delay);
+  }
 
   async function loadOverlay() {
     const requestId = ++pollRequestId;
@@ -32,7 +44,7 @@
     } finally {
       if (requestId === pollRequestId) {
         clearTimeout(pollTimer);
-        pollTimer = setTimeout(loadOverlay, 1000);
+        pollTimer = setTimeout(loadOverlay, wsConnected ? CONNECTED_POLL_MS : FALLBACK_POLL_MS);
       }
     }
   }
@@ -57,15 +69,19 @@
           || message.type === 'state_update'
           || message.type === 'entry_updated'
           || message.type === 'overlay_preview_updated') {
-          loadOverlay();
+          scheduleLoadOverlay();
         }
       } catch (_err) {
         // ignore invalid websocket payloads
       }
     });
 
+    ws.addEventListener('open', () => {
+      wsConnected = true;
+    });
     ws.addEventListener('close', scheduleWsReconnect);
     ws.addEventListener('error', () => {
+      wsConnected = false;
       try {
         ws?.close();
       } catch (_err) {
@@ -76,6 +92,7 @@
 
   function scheduleWsReconnect() {
     clearTimeout(wsReconnectTimer);
+    wsConnected = false;
     wsReconnectTimer = setTimeout(connectWs, 1500);
   }
 

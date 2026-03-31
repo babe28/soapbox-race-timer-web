@@ -43,13 +43,18 @@ function initDb(db) {
     if (!settingsColumns.some((column) => column.name === 'show_delta')) {
       db.exec('ALTER TABLE settings ADD COLUMN show_delta INTEGER NOT NULL DEFAULT 1');
     }
+    if (!settingsColumns.some((column) => column.name === 'slide_page_ms')) {
+      db.exec('ALTER TABLE settings ADD COLUMN slide_page_ms INTEGER NOT NULL DEFAULT 7000');
+      db.exec('UPDATE settings SET slide_page_ms = 7000 WHERE slide_page_ms IS NULL OR slide_page_ms <= 0');
+    }
 
     const settingsTable = db.prepare(`
       SELECT sql
       FROM sqlite_master
       WHERE type = 'table' AND name = 'settings'
     `).get();
-    if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (19, 20, 30, 35, 40)')
+    if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (15, 20, 30, 35, 40)')
+      || !settingsTable.sql.includes('slide_page_ms')
       || !settingsTable.sql.includes('request_log_mode')
       || !settingsTable.sql.includes('show_delta'))) {
       db.exec(`
@@ -59,7 +64,8 @@ function initDb(db) {
           event_name TEXT NOT NULL DEFAULT 'Soap Box Derby',
           class_name TEXT NOT NULL DEFAULT 'Super Stock',
           language TEXT NOT NULL DEFAULT 'en',
-          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (19, 20, 30, 35, 40)),
+          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (15, 20, 30, 35, 40)),
+          slide_page_ms INTEGER NOT NULL DEFAULT 7000,
           display_sort_mode TEXT NOT NULL DEFAULT 'time'
               CHECK (display_sort_mode IN ('time', 'bib')),
           request_log_mode TEXT NOT NULL DEFAULT 'writes'
@@ -81,13 +87,15 @@ function initDb(db) {
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         INSERT INTO settings (
-          id, event_name, class_name, language, rows_per_page, display_sort_mode, request_log_mode,
+          id, event_name, class_name, language, rows_per_page, slide_page_ms, display_sort_mode, request_log_mode,
           show_kana, show_car_no, show_practice, show_memo, show_split, show_delta,
           show_clock, show_last_update, show_overall_best, overall_best_include_practice,
           show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
         )
         SELECT
-          id, event_name, class_name, language, rows_per_page,
+          id, event_name, class_name, language,
+          CASE WHEN rows_per_page = 19 THEN 15 ELSE rows_per_page END,
+          COALESCE(slide_page_ms, 7000),
           COALESCE(display_sort_mode, 'time'),
           COALESCE(request_log_mode, 'writes'),
           show_kana, show_car_no, show_practice,

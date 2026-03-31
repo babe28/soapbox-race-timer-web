@@ -8,6 +8,9 @@
   let clockTimer = null;
   let ws = null;
   let wsReconnectTimer = null;
+  let scheduledLoadTimer = null;
+  let wsConnected = false;
+  let shouldPulseLiveState = false;
   let localConnectionOk = true;
   let currentPageIndex = 0;
   let lastPageSignature = '';
@@ -17,8 +20,18 @@
   const ROW_HIGHLIGHT_MS = 12000;
   const TIME_FLASH_MS = 16000;
   const BEST_MARK_MS = 22000;
-  const SLIDE_MODE_PAGE_SIZE = 19;
-  const SLIDE_MODE_PAGE_MS = 7000;
+  const SLIDE_MODE_PAGE_SIZE = 15;
+  const DEFAULT_SLIDE_MODE_PAGE_MS = 7000;
+  const CONNECTED_POLL_MS = 4000;
+  const FALLBACK_POLL_MS = 1000;
+
+  function scheduleLoadDisplay(delay = 80) {
+    clearTimeout(scheduledLoadTimer);
+    scheduledLoadTimer = setTimeout(() => {
+      scheduledLoadTimer = null;
+      loadDisplay();
+    }, delay);
+  }
 
   async function loadDisplay() {
     const requestId = ++pollRequestId;
@@ -33,6 +46,7 @@
       const data = await res.json();
       if (requestId !== pollRequestId) return;
       localConnectionOk = true;
+      document.getElementById('displayLoadError')?.remove();
       render(data);
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -45,7 +59,7 @@
     } finally {
       if (requestId === pollRequestId) {
         clearTimeout(pollTimer);
-        pollTimer = setTimeout(loadDisplay, 1000);
+        pollTimer = setTimeout(loadDisplay, wsConnected ? CONNECTED_POLL_MS : FALLBACK_POLL_MS);
       }
     }
   }
@@ -70,18 +84,24 @@
           || message.type === 'settings_updated'
           || message.type === 'state_update'
           || message.type === 'entry_updated') {
-          loadDisplay();
+          shouldPulseLiveState = true;
+          scheduleLoadDisplay();
         }
       } catch (_err) {
         // ignore invalid websocket payloads
       }
     });
 
+    ws.addEventListener('open', () => {
+      wsConnected = true;
+    });
     ws.addEventListener('close', () => {
+      wsConnected = false;
       scheduleWsReconnect();
     });
 
     ws.addEventListener('error', () => {
+      wsConnected = false;
       try {
         ws?.close();
       } catch (_err) {
@@ -132,16 +152,17 @@
     document.getElementById('nextRunning').textContent = data.next || '-';
 
     const liveState = document.getElementById('liveState');
-    if (liveState) {
+    if (liveState && shouldPulseLiveState) {
       liveState.classList.remove('is-pulse');
       void liveState.offsetWidth;
       liveState.classList.add('is-pulse');
+      shouldPulseLiveState = false;
     }
 
     renderConnection(localConnectionOk && !!data.connection?.connected);
 
     const rowsPerPage = Number(data.settings?.rowsPerPage || 20);
-    body.classList.toggle('mode-19-slide', rowsPerPage === 19);
+    body.classList.toggle('mode-15-slide', rowsPerPage === 15);
     body.classList.toggle('mode-30', rowsPerPage === 30);
     body.classList.toggle('mode-35', rowsPerPage === 35);
     body.classList.toggle('mode-40', rowsPerPage === 40);
@@ -156,10 +177,10 @@
     body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
     body.classList.toggle('hide-overall-best', !data.settings?.showOverallBest);
 
-    syncRows(resolveVisibleRows(data.rows || [], rowsPerPage));
+    syncRows(resolveVisibleRows(data.rows || [], rowsPerPage, Number(data.settings?.slidePageMs || DEFAULT_SLIDE_MODE_PAGE_MS)));
   }
 
-  function resolveVisibleRows(rows, rowsPerPage) {
+  function resolveVisibleRows(rows, rowsPerPage, slidePageMs) {
     if (rowsPerPage !== SLIDE_MODE_PAGE_SIZE) {
       currentPageIndex = 0;
       lastPageSignature = '';
@@ -190,7 +211,7 @@
       currentPageIndex = 0;
       lastPageAdvanceAt = Date.now();
       pageChanged = true;
-    } else if (pages.length > 1 && (Date.now() - lastPageAdvanceAt) >= SLIDE_MODE_PAGE_MS) {
+    } else if (pages.length > 1 && (Date.now() - lastPageAdvanceAt) >= slidePageMs) {
       currentPageIndex = (currentPageIndex + 1) % pages.length;
       lastPageAdvanceAt = Date.now();
       pageChanged = true;
@@ -246,15 +267,6 @@
       }
 
       updateRow(tr, row);
-      if (animatePage) {
-        tr.classList.remove('page-slide-in');
-        void tr.offsetWidth;
-        tr.style.setProperty('--row-enter-delay', `${index * 45}ms`);
-        tr.classList.add('page-slide-in');
-      } else {
-        tr.classList.remove('page-slide-in');
-        tr.style.removeProperty('--row-enter-delay');
-      }
       tbody.appendChild(tr);
     });
 
@@ -262,6 +274,14 @@
       if (seenKeys.has(key)) continue;
       tr.remove();
       rowElements.delete(key);
+    }
+
+    if (animatePage) {
+      tbody.classList.remove('page-slide-in');
+      void tbody.offsetWidth;
+      tbody.classList.add('page-slide-in');
+    } else {
+      tbody.classList.remove('page-slide-in');
     }
   }
 
@@ -281,7 +301,7 @@
     setCell(tr, 'r1goal', row.r1?.goal || '--.---', `${enteredClass(row.r1?.updatedAt)} ${row.r1?.faster ? 'time-faster' : ''}`.trim());
     setCell(tr, 'r2split', row.r2?.split || '--.---', enteredClass(row.r2?.updatedAt));
     setCell(tr, 'r2goal', row.r2?.goal || '--.---', `${enteredClass(row.r2?.updatedAt)} ${row.r2?.faster ? 'time-faster' : ''}`.trim());
-    setCell(tr, 'delta', row.delta || '--.---');
+    setCell(tr, 'delta', row.delta || '--.---', deltaClass(row.delta));
     setCell(tr, 'best', row.best || '--.---', bestClass(row.bestUpdatedAt));
   }
 
@@ -301,6 +321,8 @@
     td.classList.toggle('time-entered', extraClass.includes('time-entered'));
     td.classList.toggle('time-best', extraClass.includes('time-best'));
     td.classList.toggle('time-faster', extraClass.includes('time-faster'));
+    td.classList.toggle('delta-positive', extraClass.includes('delta-positive'));
+    td.classList.toggle('delta-negative', extraClass.includes('delta-negative'));
   }
 
   function enteredClass(updatedAt) {
@@ -309,6 +331,13 @@
 
   function bestClass(updatedAt) {
     return isRecent(updatedAt, BEST_MARK_MS) ? 'time-best' : '';
+  }
+
+  function deltaClass(value) {
+    const text = String(value || '');
+    if (text.startsWith('+')) return 'delta-positive';
+    if (text.startsWith('-')) return 'delta-negative';
+    return '';
   }
 
   function isRecent(updatedAt, windowMs) {

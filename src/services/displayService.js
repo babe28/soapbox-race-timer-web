@@ -1,6 +1,7 @@
 const { getSettings } = require('./settingsService');
 const { formatMs } = require('./formatters');
 const { getOverlayPreview } = require('./overlayPreviewService');
+const { getSelectionPreview } = require('./selectionPreviewService');
 
 function toIsoTimestamp(value) {
   if (!value) return null;
@@ -8,59 +9,75 @@ function toIsoTimestamp(value) {
   return text.endsWith('Z') ? text : `${text}Z`;
 }
 
-function getBestRunByEntryAndType(db, entryId, runType) {
-  return db.prepare(`
-    SELECT *
-    FROM runs
-    WHERE entry_id = ?
-      AND run_type = ?
-      AND valid_for_display = 1
-    ORDER BY
-      CASE WHEN status = 'finished' AND goal_ms IS NOT NULL THEN 0 ELSE 1 END,
-      goal_ms ASC,
-      created_at DESC
-    LIMIT 1
-  `).get(entryId, runType);
+function getRunTimestamp(run) {
+  return String(run?.updated_at || run?.created_at || '');
 }
 
-function getLatestDisplayRunByEntry(db, entryId, practiceOnly) {
-  return db.prepare(`
-    SELECT *
-    FROM runs
-    WHERE entry_id = ?
-      AND valid_for_display = 1
-      AND status = 'finished'
-      AND goal_ms IS NOT NULL
-      ${practiceOnly ? `AND run_type = 'practice'` : ''}
-    ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
-    LIMIT 1
-  `).get(entryId);
+function compareLatestRun(candidate, current) {
+  const candidateStamp = getRunTimestamp(candidate);
+  const currentStamp = getRunTimestamp(current);
+  if (candidateStamp !== currentStamp) return candidateStamp > currentStamp ? -1 : 1;
+  return Number(candidate?.id || 0) > Number(current?.id || 0) ? -1 : 1;
 }
 
-function getBestDisplayRunByEntry(db, entryId, practiceOnly) {
-  return db.prepare(`
-    SELECT *
-    FROM runs
-    WHERE entry_id = ?
-      AND valid_for_display = 1
-      AND status = 'finished'
-      AND goal_ms IS NOT NULL
-      ${practiceOnly ? `AND run_type = 'practice'` : ''}
-    ORDER BY goal_ms ASC, COALESCE(updated_at, created_at) DESC, id DESC
-    LIMIT 1
-  `).get(entryId);
+function pickLatestRun(current, candidate) {
+  if (!current) return candidate;
+  return compareLatestRun(candidate, current) < 0 ? candidate : current;
 }
 
-function getLatestStatusRunByEntry(db, entryId, practiceOnly) {
-  return db.prepare(`
-    SELECT *
-    FROM runs
-    WHERE entry_id = ?
-      AND valid_for_display = 1
-      ${practiceOnly ? `AND run_type = 'practice'` : ''}
-    ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
-    LIMIT 1
-  `).get(entryId);
+function pickBestRunForType(current, candidate) {
+  if (!current) return candidate;
+
+  const currentPriority = current.status === 'finished' && current.goal_ms !== null && current.goal_ms !== undefined ? 0 : 1;
+  const candidatePriority = candidate.status === 'finished' && candidate.goal_ms !== null && candidate.goal_ms !== undefined ? 0 : 1;
+  if (candidatePriority !== currentPriority) return candidatePriority < currentPriority ? candidate : current;
+
+  const currentGoal = current.goal_ms ?? Number.POSITIVE_INFINITY;
+  const candidateGoal = candidate.goal_ms ?? Number.POSITIVE_INFINITY;
+  if (candidateGoal !== currentGoal) return candidateGoal < currentGoal ? candidate : current;
+
+  return compareLatestRun(candidate, current) < 0 ? candidate : current;
+}
+
+function pickBestDisplayRun(current, candidate) {
+  if (!current) return candidate;
+
+  const currentGoal = Number(current.goal_ms ?? Number.POSITIVE_INFINITY);
+  const candidateGoal = Number(candidate.goal_ms ?? Number.POSITIVE_INFINITY);
+  if (candidateGoal !== currentGoal) return candidateGoal < currentGoal ? candidate : current;
+
+  return compareLatestRun(candidate, current) < 0 ? candidate : current;
+}
+
+function buildRunIndexes(runs, practiceOnly) {
+  const bestByEntryAndType = new Map();
+  const latestDisplayByEntry = new Map();
+  const bestDisplayByEntry = new Map();
+  const latestStatusByEntry = new Map();
+
+  for (const run of runs) {
+    const entryId = Number(run.entry_id);
+    const typeKey = `${entryId}:${run.run_type}`;
+    bestByEntryAndType.set(typeKey, pickBestRunForType(bestByEntryAndType.get(typeKey), run));
+
+    if (practiceOnly && run.run_type !== 'practice') {
+      continue;
+    }
+
+    latestStatusByEntry.set(entryId, pickLatestRun(latestStatusByEntry.get(entryId), run));
+
+    if (run.status === 'finished' && run.goal_ms !== null && run.goal_ms !== undefined) {
+      latestDisplayByEntry.set(entryId, pickLatestRun(latestDisplayByEntry.get(entryId), run));
+      bestDisplayByEntry.set(entryId, pickBestDisplayRun(bestDisplayByEntry.get(entryId), run));
+    }
+  }
+
+  return {
+    bestByEntryAndType,
+    latestDisplayByEntry,
+    bestDisplayByEntry,
+    latestStatusByEntry,
+  };
 }
 
 function getRunStatusBadge(status) {
@@ -101,6 +118,44 @@ function formatSignedDeltaMs(value) {
   const sign = ms >= 0 ? '+' : '-';
   return `${sign}${formatMs(Math.abs(ms))}`;
 }
+
+function getFollowingAvailableEntry(db, referenceEntryId) {
+  const referenceId = Number(referenceEntryId);
+  if (!referenceId) return null;
+
+  const reference = db.prepare(`
+    SELECT effective_order, bib_no
+    FROM entries
+    WHERE id = ?
+      AND is_skipped = 0
+  `).get(referenceId);
+
+  if (!reference) return null;
+
+  const nextEntry = db.prepare(`
+    SELECT id, bib_no, name
+    FROM entries
+    WHERE is_skipped = 0
+      AND id <> ?
+      AND (
+        effective_order > ?
+        OR (effective_order = ? AND bib_no > ?)
+      )
+    ORDER BY effective_order ASC, bib_no ASC
+    LIMIT 1
+  `).get(referenceId, reference.effective_order, reference.effective_order, reference.bib_no);
+
+  if (nextEntry) return nextEntry;
+
+  return db.prepare(`
+    SELECT id, bib_no, name
+    FROM entries
+    WHERE is_skipped = 0
+      AND id <> ?
+    ORDER BY effective_order ASC, bib_no ASC
+    LIMIT 1
+  `).get(referenceId);
+}
 // 日本語表示は UTF-8 の生文字を使い、Unicode エスケープを避ける。
 function getLanguagePack(language, practiceOnly) {
   const isJa = language === 'ja';
@@ -113,11 +168,11 @@ function getLanguagePack(language, practiceOnly) {
       kana: isJa ? 'かな' : 'Kana',
       car: isJa ? '車番' : 'Car',
       memo: isJa ? 'メモ' : 'Memo',
-      practice: isJa ? '練習' : 'Practice',
+      practice: isJa ? '練習タイム' : 'Practice',
       r1Split: isJa ? 'R1中間' : 'R1-Sec',
-      r1Goal: isJa ? 'R1ゴール' : 'R1-Goal',
+      r1Goal: isJa ? 'R1タイム' : 'R1-Goal',
       r2Split: isJa ? 'R2中間' : 'R2-Sec',
-      r2Goal: isJa ? 'R2ゴール' : 'R2-Goal',
+      r2Goal: isJa ? 'R2タイム' : 'R2-Goal',
       delta: isJa ? '差分' : 'Diff',
       best: isJa ? 'ベスト' : 'Best',
       event: isJa ? '大会名' : 'Event',
@@ -244,16 +299,28 @@ function getDisplayCurrent(db) {
     LIMIT 1
   `).get();
 
+  const allEntryRows = [...rankingRows, ...unrunRows];
+  const entryIds = allEntryRows.map((row) => Number(row.id)).filter((id) => Number.isInteger(id) && id > 0);
+  const runIndexes = entryIds.length
+    ? buildRunIndexes(db.prepare(`
+        SELECT id, entry_id, run_type, status, split_ms, goal_ms, updated_at, created_at
+        FROM runs
+        WHERE valid_for_display = 1
+          AND entry_id IN (${entryIds.map(() => '?').join(', ')})
+      `).all(...entryIds), practiceOnly)
+    : buildRunIndexes([], practiceOnly);
+
   const mapRow = (row) => {
-    const practice = getBestRunByEntryAndType(db, row.id, 'practice');
-    const r1 = getBestRunByEntryAndType(db, row.id, 'race1');
-    const r2 = getBestRunByEntryAndType(db, row.id, 'race2');
+    const entryId = Number(row.id);
+    const practice = runIndexes.bestByEntryAndType.get(`${entryId}:practice`);
+    const r1 = runIndexes.bestByEntryAndType.get(`${entryId}:race1`);
+    const r2 = runIndexes.bestByEntryAndType.get(`${entryId}:race2`);
     const hasBothGoals = r1?.goal_ms !== null && r1?.goal_ms !== undefined
       && r2?.goal_ms !== null && r2?.goal_ms !== undefined;
     const deltaMs = hasBothGoals ? Number(r2.goal_ms) - Number(r1.goal_ms) : null;
-    const latestRun = getLatestDisplayRunByEntry(db, row.id, practiceOnly);
-    const bestRun = getBestDisplayRunByEntry(db, row.id, practiceOnly);
-    const statusRun = getLatestStatusRunByEntry(db, row.id, practiceOnly);
+    const latestRun = runIndexes.latestDisplayByEntry.get(entryId);
+    const bestRun = runIndexes.bestDisplayByEntry.get(entryId);
+    const statusRun = runIndexes.latestStatusByEntry.get(entryId);
     const statusBadge = row.rank_no ? getRunStatusBadge(statusRun?.status) : { code: '', tone: 'empty' };
 
     return {
@@ -297,6 +364,19 @@ function getDisplayCurrent(db) {
   const nextEntry = state?.next_entry_id
     ? db.prepare('SELECT bib_no, name FROM entries WHERE id = ?').get(state.next_entry_id)
     : null;
+  const selectionPreview = getSelectionPreview();
+  const previewNowEntry = selectionPreview.entryId
+    ? db.prepare(`
+        SELECT id, bib_no, name
+        FROM entries
+        WHERE id = ?
+          AND is_skipped = 0
+      `).get(selectionPreview.entryId)
+    : null;
+  const previewNextEntry = previewNowEntry ? getFollowingAvailableEntry(db, previewNowEntry.id) : null;
+  const shouldShowQueueNames = (state?.current_status || 'waiting') === 'running';
+  const displayNowEntry = shouldShowQueueNames ? (previewNowEntry || nowEntry) : null;
+  const displayNextEntry = shouldShowQueueNames ? (previewNextEntry || nextEntry) : null;
 
   return {
     header: {
@@ -315,8 +395,8 @@ function getDisplayCurrent(db) {
     mode: practiceOnly ? 'practice' : 'race',
     labels: i18n.labels,
     rows,
-    nowRunning: nowEntry ? `No.${nowEntry.bib_no} ${nowEntry.name}` : '-',
-    next: nextEntry ? `No.${nextEntry.bib_no} ${nextEntry.name}` : '-',
+    nowRunning: displayNowEntry ? `No.${displayNowEntry.bib_no} ${displayNowEntry.name}` : '',
+    next: displayNextEntry ? `No.${displayNextEntry.bib_no} ${displayNextEntry.name}` : '',
     connection: {
       connected: (state?.connection_state || 'connected') === 'connected',
     },

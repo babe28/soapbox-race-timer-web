@@ -2,6 +2,7 @@ const express = require('express');
 const { getControlState } = require('../services/displayService');
 const { logAudit } = require('../services/auditService');
 const { clearOverlayPreview, setOverlayPreview } = require('../services/overlayPreviewService');
+const { clearSelectionPreview, setSelectionPreview } = require('../services/selectionPreviewService');
 
 function normalizeExternalTimerValue(value, label) {
   const text = String(value ?? '').trim();
@@ -111,6 +112,7 @@ function createControlRouter(db, wsHub) {
       WHERE id = 1
     `).run(entryId, nextId);
     clearOverlayPreview();
+    clearSelectionPreview();
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'set_now_running',
@@ -127,6 +129,7 @@ function createControlRouter(db, wsHub) {
   router.post('/action/set-next', (req, res) => {
     const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     db.prepare('UPDATE display_state SET next_entry_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(req.body.entryId || null);
+    clearSelectionPreview();
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'set_next',
@@ -154,6 +157,7 @@ function createControlRouter(db, wsHub) {
       WHERE id = 1
     `).run(newNowId, newNextId);
     clearOverlayPreview();
+    clearSelectionPreview();
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'set_now_running',
@@ -179,6 +183,7 @@ function createControlRouter(db, wsHub) {
       nextId = getFollowingAvailableEntryId(db, referenceId, [referenceId]);
       db.prepare('UPDATE display_state SET next_entry_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(nextId);
     }
+    clearSelectionPreview();
 
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('state_update');
@@ -203,6 +208,7 @@ function createControlRouter(db, wsHub) {
     if (!state?.next_entry_id && entryId !== state?.now_running_entry_id) {
       db.prepare('UPDATE display_state SET next_entry_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(entryId);
     }
+    clearSelectionPreview();
 
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('state_update');
@@ -232,6 +238,13 @@ function createControlRouter(db, wsHub) {
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
+  });
+
+  router.post('/selection-preview', (req, res) => {
+    const entryId = Number(req.body?.entryId) || null;
+    const preview = entryId ? setSelectionPreview(entryId) : clearSelectionPreview();
+    wsHub.broadcast('display_update');
+    res.json({ ok: true, preview });
   });
 
   router.post('/overlay-preview', (req, res) => {

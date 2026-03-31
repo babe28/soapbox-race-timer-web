@@ -6,11 +6,29 @@ let currentPollController = null;
 let preferredSelectedEntryId = null;
 let ws = null;
 let wsReconnectTimer = null;
+let scheduledControlReloadTimer = null;
+let wsConnected = false;
 let externalTimerNoticeTimer = null;
 let overlayPreviewSyncTimer = null;
+let selectionPreviewSyncTimer = null;
 
 const fmt = window.SoapboxCommon?.formatMs || ((v) => String(v ?? '-'));
 const RUN_TYPE_STORAGE_KEY = 'soapbox:lastRunType';
+const CONNECTED_POLL_MS = 4000;
+const FALLBACK_POLL_MS = 1000;
+
+function cancelScheduledControlReload() {
+  clearTimeout(scheduledControlReloadTimer);
+  scheduledControlReloadTimer = null;
+}
+
+function scheduleControlReload(nextPreferredId, delay = 80) {
+  cancelScheduledControlReload();
+  scheduledControlReloadTimer = setTimeout(() => {
+    scheduledControlReloadTimer = null;
+    loadControlState(nextPreferredId === undefined ? preferredSelectedEntryId : nextPreferredId);
+  }, delay);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
@@ -118,7 +136,9 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
     controlState = data;
     render(data);
 
-    const selectedId = nextPreferredId ?? selectedEntry?.id ?? null;
+    const selectedId = nextPreferredId === null
+      ? null
+      : (nextPreferredId ?? selectedEntry?.id ?? null);
     const queueSelected = selectedId
       ? data.queue?.find((q) => q.id === selectedId)
       : null;
@@ -131,7 +151,9 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
       clearSelectedEntry(false);
     }
 
-    preferredSelectedEntryId = selectedEntry?.id ?? null;
+    preferredSelectedEntryId = nextPreferredId === null
+      ? (selectedEntry?.id ?? null)
+      : (selectedEntry?.id ?? null);
   } catch (err) {
     if (err.name !== 'AbortError') {
       console.error(err);
@@ -139,7 +161,7 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
   } finally {
     if (requestId === pollRequestId) {
       clearTimeout(pollTimer);
-      pollTimer = setTimeout(() => loadControlState(), 1000);
+      pollTimer = setTimeout(() => loadControlState(), wsConnected ? CONNECTED_POLL_MS : FALLBACK_POLL_MS);
     }
   }
   return controlState;
@@ -164,7 +186,7 @@ function connectWs() {
         || message.type === 'entry_updated'
         || message.type === 'run_updated'
         || message.type === 'overlay_preview_updated') {
-        loadControlState();
+        scheduleControlReload();
         return;
       }
       if (message.type === 'external_timer_input') {
@@ -179,11 +201,16 @@ function connectWs() {
     }
   });
 
+  ws.addEventListener('open', () => {
+    wsConnected = true;
+  });
   ws.addEventListener('close', () => {
+    wsConnected = false;
     scheduleWsReconnect();
   });
 
   ws.addEventListener('error', () => {
+    wsConnected = false;
     try {
       ws?.close();
     } catch (_err) {
@@ -287,6 +314,7 @@ function setSelectedEntry(entry, fillForm = true, syncPreview = true) {
   }
 
   if (syncPreview) scheduleOverlayPreviewSync();
+  scheduleSelectionPreviewSync();
 }
 
 async function loadEntryHistory(entryId) {
@@ -311,6 +339,7 @@ function clearSelectedEntry(syncPreview = true) {
   renderHistory([]);
   renderQueueList();
   if (syncPreview) scheduleOverlayPreviewSync();
+  scheduleSelectionPreviewSync();
 }
 
 function renderHistory(runs) {
@@ -390,7 +419,9 @@ function renderQueueList() {
   }
 }
 
-async function saveRun() {
+async function saveRun(options = {}) {
+  const keepSelection = options.keepSelection !== false;
+
   if (!selectedEntry?.id) {
     alert('Select an entry first');
     return false;
@@ -440,14 +471,16 @@ async function saveRun() {
   }
 
   setRunType(runType);
-  await loadControlState(selectedEntry.id);
+  await loadControlState(keepSelection ? selectedEntry.id : null);
   scheduleOverlayPreviewSync();
   return true;
 }
 
 async function saveAndNext() {
   const currentEntryId = selectedEntry?.id ?? null;
-  const ok = await saveRun();
+  cancelScheduledControlReload();
+  preferredSelectedEntryId = null;
+  const ok = await saveRun({ keepSelection: false });
   if (!ok) return;
   await moveToNextDriver(currentEntryId);
 }
@@ -530,6 +563,15 @@ function scheduleOverlayPreviewSync() {
   }, 120);
 }
 
+function scheduleSelectionPreviewSync() {
+  clearTimeout(selectionPreviewSyncTimer);
+  selectionPreviewSyncTimer = setTimeout(() => {
+    syncSelectionPreview().catch((err) => {
+      console.error(err);
+    });
+  }, 180);
+}
+
 async function syncOverlayPreview() {
   if (!selectedEntry?.id) {
     await postJson('/api/control/overlay-preview', {});
@@ -550,7 +592,15 @@ async function syncOverlayPreview() {
   } : {});
 }
 
+async function syncSelectionPreview() {
+  await postJson('/api/control/selection-preview', selectedEntry?.id ? {
+    entryId: selectedEntry.id,
+  } : {});
+}
+
 async function moveToNextDriver(currentEntryId = selectedEntry?.id ?? null) {
+  cancelScheduledControlReload();
+  preferredSelectedEntryId = null;
   if (currentEntryId) {
     await postJson('/api/control/action/set-now', { entryId: currentEntryId });
   }
