@@ -1,5 +1,5 @@
 const express = require('express');
-const { getControlState } = require('../services/displayService');
+const { getControlState, getStarterState } = require('../services/displayService');
 const { logAudit } = require('../services/auditService');
 const { clearOverlayPreview, setOverlayPreview } = require('../services/overlayPreviewService');
 const { clearSelectionPreview, setSelectionPreview } = require('../services/selectionPreviewService');
@@ -79,6 +79,10 @@ function createControlRouter(db, wsHub, controlLockService) {
     res.json(getControlState(db));
   });
 
+  router.get('/starter', (_req, res) => {
+    res.json(getStarterState(db));
+  });
+
   router.get('/lock', (_req, res) => {
     res.json(controlLockService.status());
   });
@@ -134,6 +138,7 @@ function createControlRouter(db, wsHub, controlLockService) {
       UPDATE display_state SET
         now_running_entry_id = ?,
         next_entry_id = ?,
+        starter_ready = 0,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(entryId, nextId);
@@ -179,6 +184,7 @@ function createControlRouter(db, wsHub, controlLockService) {
       UPDATE display_state SET
         now_running_entry_id = ?,
         next_entry_id = ?,
+        starter_ready = 0,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(newNowId, newNextId);
@@ -252,7 +258,7 @@ function createControlRouter(db, wsHub, controlLockService) {
 
   router.post('/action/status', (req, res) => {
     const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
-    db.prepare('UPDATE display_state SET current_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(req.body.status);
+    db.prepare('UPDATE display_state SET current_status = ?, starter_ready = 0, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(req.body.status);
     const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     logAudit(db, {
       actionType: 'change_status',
@@ -264,6 +270,13 @@ function createControlRouter(db, wsHub, controlLockService) {
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
+  });
+
+  router.post('/action/starter-ready', (req, res) => {
+    const ready = Number(Boolean(req.body?.ready));
+    db.prepare('UPDATE display_state SET starter_ready = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1').run(ready);
+    wsHub.broadcast('state_update');
+    res.json({ ok: true, starterReady: Boolean(ready) });
   });
 
   router.post('/selection-preview', (req, res) => {

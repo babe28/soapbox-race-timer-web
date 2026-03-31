@@ -24,6 +24,10 @@ function initDb(db) {
     if (!heatColumns.some((column) => column.name === 'code')) {
       db.exec('ALTER TABLE heats ADD COLUMN code TEXT');
     }
+    const displayStateColumns = db.prepare('PRAGMA table_info(display_state)').all();
+    if (!displayStateColumns.some((column) => column.name === 'starter_ready')) {
+      db.exec('ALTER TABLE display_state ADD COLUMN starter_ready INTEGER NOT NULL DEFAULT 0');
+    }
     const settingsColumns = db.prepare('PRAGMA table_info(settings)').all();
     if (!settingsColumns.some((column) => column.name === 'show_memo')) {
       db.exec('ALTER TABLE settings ADD COLUMN show_memo INTEGER NOT NULL DEFAULT 0');
@@ -129,7 +133,7 @@ function resetDb(db) {
 function clearRunsOnly(db) {
   const clear = db.transaction(() => {
     db.exec('DELETE FROM runs');
-    db.exec('UPDATE display_state SET last_update_at = NULL, overall_best_run_id = NULL, now_running_entry_id = NULL, next_entry_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = 1');
+    db.exec('UPDATE display_state SET last_update_at = NULL, overall_best_run_id = NULL, now_running_entry_id = NULL, next_entry_id = NULL, starter_ready = 0, updated_at = CURRENT_TIMESTAMP WHERE id = 1');
     db.exec("DELETE FROM sqlite_sequence WHERE name IN ('runs')");
   });
   clear();

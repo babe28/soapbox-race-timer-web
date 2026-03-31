@@ -219,6 +219,25 @@
   background: rgba(159, 176, 211, 0.12);
   border-color: rgba(159, 176, 211, 0.35);
 }
+.starter-ready-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(159, 176, 211, 0.12);
+  font-size: 14px;
+}
+.starter-ready-badge.is-ready {
+  background: rgba(88, 214, 141, 0.18);
+  border-color: rgba(88, 214, 141, 0.45);
+  color: #ddffe6;
+}
+.starter-ready-badge.is-waiting {
+  color: var(--muted);
+}
 .queue-list-compact {
   max-height: 560px;
   overflow: auto;

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Starter Remote</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/starter.css" />
+</head>
+<body class="starter-body">
+  <main class="starter-shell">
+    <section class="starter-hero">
+      <p class="starter-eyebrow">Starter Remote</p>
+      <h1 id="starterEventName">Soap Box Derby</h1>
+      <div class="starter-meta">
+        <span id="starterHeatNo">Heat -</span>
+        <span id="starterLastUpdate">Last update -</span>
+      </div>
+    </section>
+
+    <section class="starter-panel">
+      <div class="starter-section-label">Race Status</div>
+      <div class="starter-status-current" id="starterCurrentStatus">WAITING</div>
+      <div class="starter-status-grid">
+        <button type="button" class="starter-status-btn" data-status="waiting">Waiting</button>
+        <button type="button" class="starter-status-btn" data-status="preparing">Preparing</button>
+        <button type="button" class="starter-status-btn" data-status="running">Running</button>
+        <button type="button" class="starter-status-btn" data-status="finished">Finished</button>
+      </div>
+    </section>
+
+    <section class="starter-panel">
+      <div class="starter-section-label">Starter Signal</div>
+      <div class="starter-ready-state" id="starterReadyState">WAITING</div>
+      <button type="button" class="starter-ready-btn" id="starterReadyBtn">スタート準備完了</button>
+      <p class="starter-help">スタート地点の準備が整ったら送信してください。Race Control 画面にだけ表示されます。</p>
+    </section>
+
+    <section class="starter-panel">
+      <div class="starter-section-label">Queue</div>
+      <div class="starter-queue-card">
+        <span>Now Running</span>
+        <strong id="starterNowRunning">-</strong>
+      </div>
+      <div class="starter-queue-card">
+        <span>Next</span>
+        <strong id="starterNext">-</strong>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/starter.js?v=1.0.0" defer></script>
+</body>
+</html>

@@ -486,6 +486,7 @@ function getControlState(db) {
     heatId: state?.current_heat_id ?? null,
     heatNo: state?.heat_code || state?.heat_no || null,
     status: state?.current_status || 'waiting',
+    starterReady: Boolean(state?.starter_ready),
     overallBest: overallBest?.goal_ms ?? null,
     lastUpdate: formatJstTime(state?.last_update_at),
 
@@ -539,4 +540,17 @@ function getControlState(db) {
   };
 }
 
-module.exports = { getDisplayCurrent, getControlState };
+function getStarterState(db) {
+  const controlState = getControlState(db);
+  return {
+    eventName: controlState.eventName,
+    heatNo: controlState.heatNo,
+    status: controlState.status,
+    starterReady: controlState.starterReady,
+    nowRunningEntry: controlState.nowRunningEntry,
+    nextEntry: controlState.nextEntry,
+    lastUpdate: controlState.lastUpdate,
+  };
+}
+
+module.exports = { getDisplayCurrent, getControlState, getStarterState };
