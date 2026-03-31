@@ -6,6 +6,7 @@ const morgan = require('morgan');
 
 const { createDb, initDb } = require('./db');
 const { createClientTracker } = require('./services/clientTracker');
+const { createControlLockService } = require('./services/controlLockService');
 const { shouldSkipRequestLog } = require('./services/serverLogService');
 const { createWsHub } = require('./ws/hub');
 const { createSettingsRouter } = require('./routes/settings');
@@ -22,6 +23,7 @@ const DB_PATH = path.resolve(process.env.DB_PATH || path.join(process.cwd(), 'da
 const db = createDb(DB_PATH);
 initDb(db);
 const clientTracker = createClientTracker();
+const controlLockService = createControlLockService();
 
 const app = express();
 app.set('trust proxy', true);
@@ -64,7 +66,7 @@ app.use('/api/heats', createHeatsRouter(db, wsHub));
 app.use('/api/entries', createEntriesRouter(db, wsHub));
 app.use('/api/runs', createRunsRouter(db, wsHub));
 app.use('/api/display', createDisplayRouter(db));
-app.use('/api/control', createControlRouter(db, wsHub));
+app.use('/api/control', createControlRouter(db, wsHub, controlLockService));
 
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -11,11 +11,19 @@ let wsConnected = false;
 let externalTimerNoticeTimer = null;
 let overlayPreviewSyncTimer = null;
 let selectionPreviewSyncTimer = null;
+let controlLockHeartbeatTimer = null;
+let controlLockRetryTimer = null;
+let controlLockOwned = false;
+let controlSessionId = null;
+let controlActivated = false;
 
 const fmt = window.SoapboxCommon?.formatMs || ((v) => String(v ?? '-'));
 const RUN_TYPE_STORAGE_KEY = 'soapbox:lastRunType';
 const CONNECTED_POLL_MS = 4000;
 const FALLBACK_POLL_MS = 1000;
+const CONTROL_LOCK_SESSION_KEY = 'soapbox:control-session-id';
+const CONTROL_LOCK_HEARTBEAT_MS = 5000;
+const CONTROL_LOCK_RETRY_MS = 5000;
 
 function cancelScheduledControlReload() {
   clearTimeout(scheduledControlReloadTimer);
@@ -23,6 +31,7 @@ function cancelScheduledControlReload() {
 }
 
 function scheduleControlReload(nextPreferredId, delay = 80) {
+  if (!controlLockOwned) return;
   cancelScheduledControlReload();
   scheduledControlReloadTimer = setTimeout(() => {
     scheduledControlReloadTimer = null;
@@ -33,8 +42,10 @@ function scheduleControlReload(nextPreferredId, delay = 80) {
 document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
   restoreRunType();
-  loadControlState();
-  connectWs();
+  initializeControlSession();
+  ensureControlLock();
+  window.addEventListener('pagehide', releaseControlLock);
+  window.addEventListener('beforeunload', releaseControlLock);
 });
 
 function bindEvents() {
@@ -120,7 +131,146 @@ async function postJson(url, body) {
   return res.json().catch(() => ({}));
 }
 
+function initializeControlSession() {
+  try {
+    const existing = window.sessionStorage.getItem(CONTROL_LOCK_SESSION_KEY);
+    if (existing) {
+      controlSessionId = existing;
+      return;
+    }
+    controlSessionId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    window.sessionStorage.setItem(CONTROL_LOCK_SESSION_KEY, controlSessionId);
+  } catch (_err) {
+    controlSessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+}
+
+function showControlLockOverlay(message) {
+  document.body.classList.add('is-locked');
+  const overlay = document.getElementById('controlLockOverlay');
+  const messageEl = document.getElementById('controlLockMessage');
+  if (messageEl) {
+    messageEl.textContent = message || '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。';
+  }
+  if (overlay) overlay.hidden = false;
+}
+
+function hideControlLockOverlay() {
+  document.body.classList.remove('is-locked');
+  const overlay = document.getElementById('controlLockOverlay');
+  if (overlay) overlay.hidden = true;
+}
+
+function stopControlActivity() {
+  clearTimeout(pollTimer);
+  clearTimeout(scheduledControlReloadTimer);
+  clearTimeout(selectionPreviewSyncTimer);
+  clearTimeout(overlayPreviewSyncTimer);
+  clearTimeout(controlLockHeartbeatTimer);
+  clearTimeout(wsReconnectTimer);
+  pollTimer = null;
+  scheduledControlReloadTimer = null;
+  selectionPreviewSyncTimer = null;
+  overlayPreviewSyncTimer = null;
+  controlLockHeartbeatTimer = null;
+  wsReconnectTimer = null;
+  currentPollController?.abort();
+  currentPollController = null;
+  wsConnected = false;
+  if (ws) {
+    try {
+      ws.close();
+    } catch (_err) {
+      // ignore close errors
+    }
+    ws = null;
+  }
+}
+
+function startControlActivity() {
+  if (controlActivated) return;
+  controlActivated = true;
+  hideControlLockOverlay();
+  loadControlState();
+  connectWs();
+}
+
+function scheduleControlLockRetry(delay = CONTROL_LOCK_RETRY_MS) {
+  clearTimeout(controlLockRetryTimer);
+  controlLockRetryTimer = setTimeout(() => {
+    controlLockRetryTimer = null;
+    ensureControlLock();
+  }, delay);
+}
+
+function startControlLockHeartbeat() {
+  clearTimeout(controlLockHeartbeatTimer);
+  controlLockHeartbeatTimer = setTimeout(async () => {
+    controlLockHeartbeatTimer = null;
+    if (!controlLockOwned) return;
+    try {
+      const res = await fetch('/api/control/lock/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: controlSessionId }),
+      });
+      if (!res.ok) {
+        controlLockOwned = false;
+        controlActivated = false;
+        stopControlActivity();
+        showControlLockOverlay('別の画面が Race Control を使用しています。利用可能になり次第、この画面は自動で有効になります。');
+        scheduleControlLockRetry();
+        return;
+      }
+    } catch (_err) {
+      // keep current lock and retry heartbeat
+    }
+    startControlLockHeartbeat();
+  }, CONTROL_LOCK_HEARTBEAT_MS);
+}
+
+async function ensureControlLock() {
+  clearTimeout(controlLockRetryTimer);
+  try {
+    const res = await fetch('/api/control/lock/acquire', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: controlSessionId }),
+    });
+
+    if (!res.ok) {
+      controlLockOwned = false;
+      controlActivated = false;
+      stopControlActivity();
+      showControlLockOverlay('すでに別のブラウザで Race Control が開かれています。そちらを閉じると、この画面は自動で有効になります。');
+      scheduleControlLockRetry();
+      return;
+    }
+
+    controlLockOwned = true;
+    startControlActivity();
+    startControlLockHeartbeat();
+  } catch (_err) {
+    controlLockOwned = false;
+    controlActivated = false;
+    stopControlActivity();
+    showControlLockOverlay('Race Control のロック確認に失敗しました。接続を再確認しています。');
+    scheduleControlLockRetry(3000);
+  }
+}
+
+function releaseControlLock() {
+  if (!controlSessionId) return;
+  clearTimeout(controlLockRetryTimer);
+  clearTimeout(controlLockHeartbeatTimer);
+  if (navigator.sendBeacon) {
+    const payload = new Blob([JSON.stringify({ sessionId: controlSessionId })], { type: 'application/json' });
+    navigator.sendBeacon('/api/control/lock/release', payload);
+  }
+}
+
 async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
+  if (!controlLockOwned) return controlState;
   const requestId = ++pollRequestId;
   currentPollController?.abort();
   currentPollController = new AbortController();
@@ -168,6 +318,7 @@ async function loadControlState(nextPreferredId = preferredSelectedEntryId) {
 }
 
 function connectWs() {
+  if (!controlLockOwned) return;
   clearTimeout(wsReconnectTimer);
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const url = `${protocol}//${window.location.host}/ws`;
@@ -220,6 +371,7 @@ function connectWs() {
 }
 
 function scheduleWsReconnect() {
+  if (!controlLockOwned) return;
   clearTimeout(wsReconnectTimer);
   wsReconnectTimer = setTimeout(connectWs, 1500);
 }

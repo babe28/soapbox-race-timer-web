@@ -81,7 +81,7 @@ input, select {
 }
 label span {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   margin-bottom: 6px;
 }

@@ -72,11 +72,32 @@ function getFollowingAvailableEntryId(db, referenceEntryId, excludedIds = []) {
   return null;
 }
 
-function createControlRouter(db, wsHub) {
+function createControlRouter(db, wsHub, controlLockService) {
   const router = express.Router();
 
   router.get('/state', (_req, res) => {
     res.json(getControlState(db));
+  });
+
+  router.get('/lock', (_req, res) => {
+    res.json(controlLockService.status());
+  });
+
+  router.post('/lock/acquire', (req, res) => {
+    const result = controlLockService.acquire(req.body?.sessionId);
+    if (!result.ok) return res.status(409).json({ error: 'Race Control is already open', ...result.status });
+    res.json({ ok: true, ...result.status });
+  });
+
+  router.post('/lock/heartbeat', (req, res) => {
+    const result = controlLockService.heartbeat(req.body?.sessionId);
+    if (!result.ok) return res.status(409).json({ error: 'Race Control lock is not available', ...result.status });
+    res.json({ ok: true, ...result.status });
+  });
+
+  router.post('/lock/release', (req, res) => {
+    const result = controlLockService.release(req.body?.sessionId);
+    res.json({ ok: result.ok, ...result.status });
   });
 
   router.post('/external-time', (req, res) => {
