@@ -50,6 +50,10 @@ app.get('/control', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/control.html'));
 });
 
+app.get('/starter', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/starter.html'));
+});
+
 app.get('/driver-overlay', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/driver-overlay.html'));
 });

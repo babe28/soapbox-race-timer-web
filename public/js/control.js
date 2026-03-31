@@ -438,6 +438,13 @@ function render(data) {
   document.getElementById('ctrlEventName').textContent = data.eventName ?? '-';
   document.getElementById('ctrlHeatNo').textContent = data.heatNo ? String(data.heatNo) : '-';
   document.getElementById('ctrlStatus').textContent = String(data.status ?? '-').toUpperCase();
+  const starterReadyEl = document.getElementById('ctrlStarterReady');
+  if (starterReadyEl) {
+    starterReadyEl.textContent = data.starterReady ? 'READY' : 'WAITING';
+    starterReadyEl.classList.toggle('is-ready', Boolean(data.starterReady));
+    starterReadyEl.classList.toggle('is-waiting', !data.starterReady);
+    starterReadyEl.closest('.starter-ready-item')?.classList.toggle('is-ready', Boolean(data.starterReady));
+  }
   document.getElementById('ctrlOverallBest').textContent = fmt(data.overallBest);
   document.getElementById('ctrlLastUpdate').textContent = data.lastUpdate ?? '-';
 

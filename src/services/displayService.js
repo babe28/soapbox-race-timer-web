@@ -197,7 +197,7 @@ function getLanguagePack(language, practiceOnly) {
 function getDisplayCurrent(db) {
   const settings = getSettings(db);
   const state = db.prepare(`
-    SELECT ds.*, h.heat_no, h.code AS heat_code
+    SELECT ds.*, h.heat_no, h.code AS heat_code, h.title AS heat_title
     FROM display_state ds
     LEFT JOIN heats h ON h.id = ds.current_heat_id
     WHERE ds.id = 1
@@ -380,7 +380,7 @@ function getDisplayCurrent(db) {
 
   return {
     header: {
-      heat: state?.heat_code || state?.heat_no || null,
+      heat: state?.heat_title || null,
       status: i18n.status[state?.current_status || 'waiting'],
       lastUpdate: formatJstTime(state?.last_update_at),
       clock: new Date().toLocaleTimeString('ja-JP', {
@@ -408,7 +408,7 @@ function getControlState(db) {
   const settings = getSettings(db);
 
   const state = db.prepare(`
-    SELECT ds.*, h.heat_no, h.code AS heat_code
+    SELECT ds.*, h.heat_no, h.code AS heat_code, h.title AS heat_title
     FROM display_state ds
     LEFT JOIN heats h ON h.id = ds.current_heat_id
     WHERE ds.id = 1
@@ -484,8 +484,9 @@ function getControlState(db) {
   return {
     eventName: settings.eventName || 'Soap Box Derby',
     heatId: state?.current_heat_id ?? null,
-    heatNo: state?.heat_code || state?.heat_no || null,
+    heatNo: state?.heat_title || null,
     status: state?.current_status || 'waiting',
+    starterReady: Boolean(state?.starter_ready),
     overallBest: overallBest?.goal_ms ?? null,
     lastUpdate: formatJstTime(state?.last_update_at),
 
@@ -539,4 +540,79 @@ function getControlState(db) {
   };
 }
 
-module.exports = { getDisplayCurrent, getControlState };
+function getStarterLatestResult(db) {
+  const latestRun = db.prepare(`
+    SELECT
+      r.id,
+      r.entry_id,
+      r.split_ms,
+      r.goal_ms,
+      r.status,
+      r.created_at,
+      r.updated_at,
+      e.bib_no,
+      e.name,
+      e.effective_order
+    FROM runs r
+    JOIN entries e ON e.id = r.entry_id
+    ORDER BY r.created_at DESC, r.id DESC
+    LIMIT 1
+  `).get();
+
+  if (!latestRun) return null;
+
+  const provisionalRank = (latestRun.status === 'finished'
+    && latestRun.goal_ms !== null
+    && latestRun.goal_ms !== undefined
+    && db.prepare(`
+      WITH best_runs AS (
+        SELECT
+          r.entry_id,
+          MIN(r.goal_ms) AS best_goal_ms,
+          MIN(e.effective_order) AS effective_order,
+          MIN(e.bib_no) AS bib_no
+        FROM runs r
+        JOIN entries e ON e.id = r.entry_id
+        WHERE r.valid_for_ranking = 1
+          AND r.status = 'finished'
+          AND r.goal_ms IS NOT NULL
+        GROUP BY r.entry_id
+      ),
+      ranked AS (
+        SELECT
+          entry_id,
+          ROW_NUMBER() OVER (ORDER BY best_goal_ms ASC, effective_order ASC, bib_no ASC) AS provisional_rank
+        FROM best_runs
+      )
+      SELECT provisional_rank
+      FROM ranked
+      WHERE entry_id = ?
+    `).get(latestRun.entry_id)?.provisional_rank) || null;
+
+  return {
+    runId: latestRun.id,
+    bibNo: latestRun.bib_no,
+    name: latestRun.name,
+    provisionalRank,
+    splitMs: latestRun.split_ms,
+    goalMs: latestRun.goal_ms,
+    status: latestRun.status,
+    savedAt: toIsoTimestamp(latestRun.updated_at || latestRun.created_at),
+  };
+}
+
+function getStarterState(db) {
+  const controlState = getControlState(db);
+  return {
+    eventName: controlState.eventName,
+    heatNo: controlState.heatNo,
+    status: controlState.status,
+    starterReady: controlState.starterReady,
+    nowRunningEntry: controlState.nowRunningEntry,
+    nextEntry: controlState.nextEntry,
+    lastUpdate: controlState.lastUpdate,
+    latestResult: getStarterLatestResult(db),
+  };
+}
+
+module.exports = { getDisplayCurrent, getControlState, getStarterState };

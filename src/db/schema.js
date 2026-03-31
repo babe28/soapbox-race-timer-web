@@ -85,6 +85,7 @@ const schemaStatements = [
       current_heat_id INTEGER,
       current_status TEXT NOT NULL DEFAULT 'waiting'
           CHECK (current_status IN ('waiting', 'preparing', 'running', 'finished')),
+      starter_ready INTEGER NOT NULL DEFAULT 0,
       now_running_entry_id INTEGER,
       next_entry_id INTEGER,
       last_update_at TEXT,
