@@ -17,6 +17,9 @@
   background: rgba(4, 10, 20, 0.78);
   backdrop-filter: blur(6px);
 }
+.control-lock-overlay[hidden] {
+  display: none;
+}
 .control-lock-card {
   width: min(560px, calc(100vw - 48px));
   padding: 24px 26px;
