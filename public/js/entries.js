@@ -5,6 +5,36 @@ let heats = [];
 let currentHeatId = null;
 
 const els = {};
+const CSV_HEADER_ALIASES = {
+  bibno: 'bibNo',
+  bib: 'bibNo',
+  bibnumber: 'bibNo',
+  zekken: 'bibNo',
+  '\u30bc\u30c3\u30b1\u30f3': 'bibNo',
+  name: 'name',
+  driver: 'name',
+  '\u540d\u524d': 'name',
+  kana: 'kana',
+  '\u304b\u306a': 'kana',
+  '\u30d5\u30ea\u30ac\u30ca': 'kana',
+  furigana: 'kana',
+  carno: 'carNo',
+  car: 'carNo',
+  carnumber: 'carNo',
+  '\u8eca\u756a': 'carNo',
+  '\u8eca\u4e21\u756a\u53f7': 'carNo',
+  startorder: 'startOrder',
+  order: 'startOrder',
+  '\u51fa\u8d70\u9806': 'startOrder',
+  '\u958b\u59cb\u9806': 'startOrder',
+  displayorder: 'effectiveOrder',
+  effectiveorder: 'effectiveOrder',
+  sortorder: 'effectiveOrder',
+  '\u8868\u793a\u9806': 'effectiveOrder',
+  memo: 'memo',
+  note: 'memo',
+  '\u30e1\u30e2': 'memo',
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   bindElements();
@@ -32,6 +62,8 @@ function bindElements() {
   els.refreshBtn = document.getElementById('refreshBtn');
   els.normalizeBtn = document.getElementById('normalizeBtn');
   els.resetEntryBtn = document.getElementById('resetEntryBtn');
+  els.csvFile = document.getElementById('csvFile');
+  els.importCsvBtn = document.getElementById('importCsvBtn');
   els.sumTotal = document.getElementById('sumTotal');
   els.sumActive = document.getElementById('sumActive');
   els.sumSkipped = document.getElementById('sumSkipped');
@@ -44,6 +76,7 @@ function bindEvents() {
   els.normalizeBtn?.addEventListener('click', normalizeOrders);
   els.selectHeatBtn?.addEventListener('click', selectCurrentHeat);
   els.saveHeatBtn?.addEventListener('click', saveHeat);
+  els.importCsvBtn?.addEventListener('click', importCsv);
   els.searchInput?.addEventListener('input', applyFilterAndRender);
   els.entriesBody?.addEventListener('click', onTableClick);
 }
@@ -54,7 +87,7 @@ async function loadEntries() {
     const data = await res.json();
     entries = Array.isArray(data) ? data : [];
     applyFilterAndRender();
-    if (!editingId) autofillNextOrder();
+    if (!editingId) autofillNextDefaults();
   } catch (err) {
     console.error(err);
     alert('Failed to load entries');
@@ -133,7 +166,7 @@ function renderTable() {
         <td>${escapeHtml(row.name ?? '')}</td>
         <td>${escapeHtml(row.kana ?? '')}</td>
         <td>${escapeHtml(row.car_no ?? '')}</td>
-        <td><button type="button" class="status-pill ${skipped ? 'is-skipped' : 'is-active'}" data-action="toggle-skip">${skipped ? 'スキップ' : '有効'}</button></td>
+        <td><button type="button" class="status-pill ${skipped ? 'is-skipped' : 'is-active'}" data-action="toggle-skip">${skipped ? '\u30b9\u30ad\u30c3\u30d7' : '\u6709\u52b9'}</button></td>
         <td class="actions-cell">
           <button type="button" class="table-btn" data-action="edit">Edit</button>
           <button type="button" class="table-btn" data-action="toggle-skip">${skipped ? 'Undo' : 'Skip'}</button>
@@ -368,15 +401,203 @@ function resetForm() {
   editingId = null;
   els.entryId.value = '';
   els.form.reset();
-  autofillNextOrder();
+  autofillNextDefaults();
   applyFilterAndRender();
 }
 
-function autofillNextOrder() {
-  const maxOrder = entries.reduce((max, row) => Math.max(max, Number(row.effective_order) || 0, Number(row.start_order) || 0), 0);
-  const nextOrder = maxOrder + 1 || 1;
-  els.startOrder.value = String(nextOrder);
-  els.effectiveOrder.value = String(nextOrder);
+function autofillNextDefaults() {
+  const nextDefaults = getNextDefaults(entries);
+  els.bibNo.value = String(nextDefaults.bibNo);
+  els.carNo.value = nextDefaults.carNo;
+  els.startOrder.value = String(nextDefaults.startOrder);
+  els.effectiveOrder.value = String(nextDefaults.effectiveOrder);
+}
+
+function getNextDefaults(sourceEntries) {
+  const sorted = [...sourceEntries].sort((a, b) => {
+    return Number(a.effective_order) - Number(b.effective_order)
+      || Number(a.start_order) - Number(b.start_order)
+      || Number(a.bib_no) - Number(b.bib_no)
+      || Number(a.id) - Number(b.id);
+  });
+  const lastRow = sorted[sorted.length - 1] || null;
+  const maxBib = sourceEntries.reduce((max, row) => Math.max(max, Number(row.bib_no) || 0), 0);
+  const maxOrder = sourceEntries.reduce((max, row) => Math.max(max, Number(row.effective_order) || 0, Number(row.start_order) || 0), 0);
+  return {
+    bibNo: maxBib + 1 || 1,
+    carNo: incrementCarNo(lastRow?.car_no ?? ''),
+    startOrder: maxOrder + 1 || 1,
+    effectiveOrder: maxOrder + 1 || 1,
+  };
+}
+
+function incrementCarNo(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const match = text.match(/^(.*?)(\d+)$/);
+  if (!match) return '';
+  const [, prefix, digits] = match;
+  const nextValue = String(Number(digits) + 1).padStart(digits.length, '0');
+  return `${prefix}${nextValue}`;
+}
+
+async function importCsv() {
+  const file = els.csvFile?.files?.[0];
+  if (!file) {
+    alert('Select a CSV file first');
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const rows = parseCsv(text);
+    if (!rows.length) {
+      alert('CSV file is empty');
+      return;
+    }
+
+    const normalizedRows = buildImportRows(rows);
+    if (!normalizedRows.length) {
+      alert('No importable rows found');
+      return;
+    }
+
+    const res = await fetch('/api/entries/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: normalizedRows }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(json.error || 'Failed to import CSV');
+      return;
+    }
+
+    els.csvFile.value = '';
+    resetForm();
+    await loadEntries();
+    alert(`Imported ${json.count || normalizedRows.length} entries`);
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Failed to import CSV');
+  }
+}
+
+function buildImportRows(csvRows) {
+  const [headerRow, ...dataRows] = csvRows;
+  const headerMap = headerRow.map((header) => CSV_HEADER_ALIASES[normalizeHeader(header)] || null);
+  if (!headerMap.includes('name')) {
+    throw new Error('CSV header must include Name');
+  }
+
+  const importRows = [];
+  let nextDefaults = getNextDefaults(entries);
+
+  for (const dataRow of dataRows) {
+    if (!dataRow.some((cell) => String(cell ?? '').trim())) continue;
+
+    const raw = {};
+    for (let index = 0; index < headerMap.length; index += 1) {
+      const key = headerMap[index];
+      if (!key) continue;
+      raw[key] = dataRow[index];
+    }
+
+    const name = String(raw.name || '').trim();
+    if (!name) {
+      throw new Error('CSV contains a row without Name');
+    }
+
+    const bibNo = parseOptionalPositiveInt(raw.bibNo) ?? nextDefaults.bibNo;
+    const carNo = normalizeEmpty(raw.carNo) ?? nextDefaults.carNo;
+    const startOrder = parseOptionalPositiveInt(raw.startOrder) ?? nextDefaults.startOrder;
+    const effectiveOrder = parseOptionalPositiveInt(raw.effectiveOrder) ?? startOrder;
+
+    const row = {
+      bibNo,
+      name,
+      kana: normalizeEmpty(raw.kana),
+      carNo,
+      startOrder,
+      effectiveOrder,
+      memo: normalizeEmpty(raw.memo),
+    };
+
+    importRows.push(row);
+    nextDefaults = {
+      bibNo: bibNo + 1,
+      carNo: incrementCarNo(carNo),
+      startOrder: Math.max(startOrder, effectiveOrder) + 1,
+      effectiveOrder: Math.max(startOrder, effectiveOrder) + 1,
+    };
+  }
+
+  return importRows;
+}
+
+function normalizeHeader(value) {
+  return String(value ?? '')
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_./-]+/g, '');
+}
+
+function parseOptionalPositiveInt(value) {
+  if (value === null || value === undefined) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  const parsed = Number(text);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid number: ${text}`);
+  }
+  return parsed;
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      row.push(cell);
+      cell = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') index += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = '';
+      continue;
+    }
+
+    cell += char;
+  }
+
+  if (cell.length || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows;
 }
 
 function normalizeEmpty(value) {

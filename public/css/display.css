@@ -244,6 +244,7 @@ body.display-body {
 .col-car { width: 80px; }
 .col-memo { width: 210px; }
 .col-practice { width: 140px; }
+.col-practice-attempt { width: 116px; }
 .col-split { width: 124px; }
 .col-goal { width: 140px; }
 .col-delta { width: 120px; }
@@ -469,9 +470,13 @@ body.hide-memo .col-memo,
 body.hide-memo .cell-memo { display: none; }
 body.hide-practice .col-practice,
 body.hide-practice .cell-practice { display: none; }
+body.hide-practice .col-practice-attempt,
+body.hide-practice .cell-practice-attempt { display: none; }
 body.hide-delta .col-delta,
 body.hide-delta .cell-delta { display: none; }
 body.practice-only .race-col { display: none; }
+body.practice-history-mode .practice-best-col { display: none; }
+body:not(.practice-history-mode) .practice-attempt-col { display: none; }
 body.hide-clock .time-block .clock-value,
 body.hide-clock #labelClock { display: none; }
 body.hide-last-update .time-subvalue { display: none; }

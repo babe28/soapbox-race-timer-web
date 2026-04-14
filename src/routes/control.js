@@ -3,6 +3,7 @@ const { getControlState, getStarterState } = require('../services/displayService
 const { logAudit } = require('../services/auditService');
 const { clearOverlayPreview, setOverlayPreview } = require('../services/overlayPreviewService');
 const { clearSelectionPreview, setSelectionPreview } = require('../services/selectionPreviewService');
+const { createAnonymousEntry } = require('../services/anonymousEntryService');
 
 function normalizeExternalTimerValue(value, label) {
   const text = String(value ?? '').trim();
@@ -74,6 +75,25 @@ function getFollowingAvailableEntryId(db, referenceEntryId, excludedIds = []) {
 
 function createControlRouter(db, wsHub, controlLockService) {
   const router = express.Router();
+
+  function mapEntryRow(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      bibNo: row.bib_no,
+      name: row.name,
+      kana: row.kana,
+      carNo: row.car_no,
+      order: row.effective_order,
+      effectiveOrder: row.effective_order,
+    };
+  }
+
+  function createAnonymousEntryIfModeEnabled() {
+    const settings = db.prepare('SELECT anonymous_entry_mode FROM settings WHERE id = 1').get();
+    if (!settings?.anonymous_entry_mode) return null;
+    return createAnonymousEntry(db);
+  }
 
   router.get('/state', (_req, res) => {
     res.json(getControlState(db));
@@ -177,7 +197,9 @@ function createControlRouter(db, wsHub, controlLockService) {
   router.post('/action/move-next', (_req, res) => {
     const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
     const state = db.prepare('SELECT now_running_entry_id, next_entry_id FROM display_state WHERE id = 1').get();
-    const newNowId = state?.next_entry_id || getNextAvailableEntryId(db, []);
+    const queuedNextId = state?.next_entry_id || getNextAvailableEntryId(db, []);
+    const ensuredAnonymous = !queuedNextId ? createAnonymousEntryIfModeEnabled() : null;
+    const newNowId = queuedNextId || ensuredAnonymous?.id || null;
     const newNextId = getFollowingAvailableEntryId(db, newNowId, [newNowId]);
 
     db.prepare(`
@@ -201,6 +223,14 @@ function createControlRouter(db, wsHub, controlLockService) {
     wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
+  });
+
+  router.post('/action/ensure-anonymous-entry', (_req, res) => {
+    const row = createAnonymousEntryIfModeEnabled() || createAnonymousEntry(db);
+    wsHub.broadcast('entry_updated');
+    wsHub.broadcast('state_update');
+    wsHub.broadcast('display_update');
+    res.status(201).json(mapEntryRow(row));
   });
 
   router.post('/action/skip', (req, res) => {

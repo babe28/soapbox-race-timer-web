@@ -49,18 +49,32 @@ function pickBestDisplayRun(current, candidate) {
   return compareLatestRun(candidate, current) < 0 ? candidate : current;
 }
 
-function buildRunIndexes(runs, practiceOnly) {
+function compareRunChronological(a, b) {
+  const aStamp = getRunTimestamp(a);
+  const bStamp = getRunTimestamp(b);
+  if (aStamp !== bStamp) return aStamp < bStamp ? -1 : 1;
+  return Number(a?.id || 0) - Number(b?.id || 0);
+}
+
+function buildRunIndexes(runs, practiceDisplayMode) {
   const bestByEntryAndType = new Map();
   const latestDisplayByEntry = new Map();
   const bestDisplayByEntry = new Map();
   const latestStatusByEntry = new Map();
+  const practiceRunsByEntry = new Map();
 
   for (const run of runs) {
     const entryId = Number(run.entry_id);
     const typeKey = `${entryId}:${run.run_type}`;
     bestByEntryAndType.set(typeKey, pickBestRunForType(bestByEntryAndType.get(typeKey), run));
 
-    if (practiceOnly && run.run_type !== 'practice') {
+    if (run.run_type === 'practice' && run.status === 'finished' && run.goal_ms !== null && run.goal_ms !== undefined) {
+      const currentRuns = practiceRunsByEntry.get(entryId) || [];
+      currentRuns.push(run);
+      practiceRunsByEntry.set(entryId, currentRuns);
+    }
+
+    if (practiceDisplayMode && run.run_type !== 'practice') {
       continue;
     }
 
@@ -77,6 +91,7 @@ function buildRunIndexes(runs, practiceOnly) {
     latestDisplayByEntry,
     bestDisplayByEntry,
     latestStatusByEntry,
+    practiceRunsByEntry,
   };
 }
 
@@ -99,13 +114,13 @@ function getRunStatusBadge(status) {
   }
 }
 
-function getDisplayStatusBadge(statusRun, practiceOnly, race1Run, race2Run) {
+function getDisplayStatusBadge(statusRun, practiceDisplayMode, race1Run, race2Run) {
   const latestStatus = statusRun?.status;
   if (latestStatus !== 'finished') {
     return getRunStatusBadge(latestStatus);
   }
 
-  if (practiceOnly) {
+  if (practiceDisplayMode) {
     return { code: 'FINISH', tone: 'finished-plain' };
   }
 
@@ -245,9 +260,10 @@ function getDisplayCurrent(db) {
   const practiceOnly = totals.total_entries > 0
     && totals.practice_entries === totals.total_entries
     && totals.race_run_count === 0;
-  const i18n = getLanguagePack(settings.language, practiceOnly);
+  const practiceDisplayMode = Boolean(settings.anonymousEntryMode) || practiceOnly;
+  const i18n = getLanguagePack(settings.language, practiceDisplayMode);
 
-  const rankingRows = db.prepare(practiceOnly ? `
+  const rankingRows = db.prepare(practiceDisplayMode ? `
     SELECT
       e.id,
       e.bib_no,
@@ -283,7 +299,7 @@ function getDisplayCurrent(db) {
     ORDER BY best_goal_ms ASC, e.effective_order ASC, e.bib_no ASC
   `).all();
 
-  const unrunRows = db.prepare(practiceOnly ? `
+  const unrunRows = db.prepare(practiceDisplayMode ? `
     SELECT e.id, e.bib_no, e.name, e.kana, e.car_no, e.memo, e.effective_order
     FROM entries e
     WHERE e.id NOT IN (
@@ -313,7 +329,7 @@ function getDisplayCurrent(db) {
     WHERE valid_for_display = 1
       AND status = 'finished'
       AND goal_ms IS NOT NULL
-      ${practiceOnly
+      ${practiceDisplayMode
         ? `AND run_type = 'practice'`
         : settings.overallBestIncludePractice
           ? ''
@@ -330,21 +346,25 @@ function getDisplayCurrent(db) {
         FROM runs
         WHERE valid_for_display = 1
           AND entry_id IN (${entryIds.map(() => '?').join(', ')})
-      `).all(...entryIds), practiceOnly)
-    : buildRunIndexes([], practiceOnly);
+      `).all(...entryIds), practiceDisplayMode)
+    : buildRunIndexes([], practiceDisplayMode);
 
   const mapRow = (row) => {
     const entryId = Number(row.id);
     const practice = runIndexes.bestByEntryAndType.get(`${entryId}:practice`);
     const r1 = runIndexes.bestByEntryAndType.get(`${entryId}:race1`);
     const r2 = runIndexes.bestByEntryAndType.get(`${entryId}:race2`);
+    const practiceRuns = (runIndexes.practiceRunsByEntry.get(entryId) || [])
+      .slice()
+      .sort(compareRunChronological)
+      .slice(-4);
     const hasBothGoals = r1?.goal_ms !== null && r1?.goal_ms !== undefined
       && r2?.goal_ms !== null && r2?.goal_ms !== undefined;
     const deltaMs = hasBothGoals ? Number(r2.goal_ms) - Number(r1.goal_ms) : null;
     const latestRun = runIndexes.latestDisplayByEntry.get(entryId);
     const bestRun = runIndexes.bestDisplayByEntry.get(entryId);
     const statusRun = runIndexes.latestStatusByEntry.get(entryId);
-    const statusBadge = getDisplayStatusBadge(statusRun, practiceOnly, r1, r2);
+    const statusBadge = getDisplayStatusBadge(statusRun, practiceDisplayMode, r1, r2);
 
     return {
       status: statusBadge.code,
@@ -355,7 +375,11 @@ function getDisplayCurrent(db) {
       kana: row.kana,
       carNo: row.car_no,
       memo: row.memo,
-      practice: (settings.showPractice || practiceOnly) ? formatMs(practice?.goal_ms) : null,
+      practice: (settings.showPractice || practiceDisplayMode) ? formatMs(practice?.goal_ms) : null,
+      practiceRuns: practiceRuns.map((run) => ({
+        goal: formatMs(run.goal_ms),
+        updatedAt: toIsoTimestamp(run.updated_at || run.created_at),
+      })),
       r1: {
         split: settings.showSplit ? formatMs(r1?.split_ms) : null,
         goal: formatMs(r1?.goal_ms),
@@ -415,7 +439,7 @@ function getDisplayCurrent(db) {
       className: settings.className,
     },
     settings,
-    mode: practiceOnly ? 'practice' : 'race',
+    mode: practiceDisplayMode ? 'practice' : 'race',
     labels: i18n.labels,
     rows,
     nowRunning: displayNowEntry ? `No.${displayNowEntry.bib_no} ${displayNowEntry.name}` : '',
@@ -560,6 +584,7 @@ function getControlState(db) {
     selectedEntryRuns,
     overlayPreview: getOverlayPreview(),
     summary,
+    anonymousEntryMode: Boolean(settings.anonymousEntryMode),
   };
 }
 

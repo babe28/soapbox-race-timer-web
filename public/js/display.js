@@ -137,6 +137,10 @@
     document.getElementById('thCar').textContent = labels.car || 'Car';
     document.getElementById('thMemo').textContent = data.settings?.memoTitle || labels.memo || 'Memo';
     document.getElementById('thPractice').textContent = labels.practice || 'Practice';
+    document.getElementById('thPractice1').textContent = 'P1';
+    document.getElementById('thPractice2').textContent = 'P2';
+    document.getElementById('thPractice3').textContent = 'P3';
+    document.getElementById('thPractice4').textContent = 'P4';
     document.getElementById('thR1Split').textContent = labels.r1Split || 'R1-Sec';
     document.getElementById('thR1Goal').textContent = labels.r1Goal || 'R1-Goal';
     document.getElementById('thR2Split').textContent = labels.r2Split || 'R2-Sec';
@@ -179,6 +183,7 @@
     body.classList.toggle('hide-car', !data.settings?.showCarNo);
     body.classList.toggle('hide-memo', !data.settings?.showMemo);
     body.classList.toggle('hide-practice', !data.settings?.showPractice && data.mode !== 'practice');
+    body.classList.toggle('practice-history-mode', data.mode === 'practice');
     body.classList.toggle('hide-delta', !data.settings?.showDelta);
     body.classList.toggle('hide-clock', !data.settings?.showClock);
     body.classList.toggle('hide-last-update', !data.settings?.showLastUpdate);
@@ -262,7 +267,11 @@
           <td class="cell-kana" data-cell="kana"></td>
           <td class="cell-car" data-cell="carNo"></td>
           <td class="cell-memo" data-cell="memo"></td>
-          <td class="cell-practice" data-cell="practice"></td>
+          <td class="cell-practice practice-best-col" data-cell="practice"></td>
+          <td class="cell-practice-attempt practice-attempt-col" data-cell="practice1"></td>
+          <td class="cell-practice-attempt practice-attempt-col" data-cell="practice2"></td>
+          <td class="cell-practice-attempt practice-attempt-col" data-cell="practice3"></td>
+          <td class="cell-practice-attempt practice-attempt-col" data-cell="practice4"></td>
           <td class="cell-split race-col" data-cell="r1split"></td>
           <td class="race-col" data-cell="r1goal"></td>
           <td class="cell-split race-col" data-cell="r2split"></td>
@@ -308,6 +317,11 @@
     setCell(tr, 'carNo', row.carNo || '');
     setCell(tr, 'memo', row.memo || '');
     setCell(tr, 'practice', row.practice || '--.---', enteredClass(row.practiceUpdatedAt));
+    const practiceRuns = Array.isArray(row.practiceRuns) ? row.practiceRuns : [];
+    for (let index = 0; index < 4; index += 1) {
+      const practiceRun = practiceRuns[index] || null;
+      setCell(tr, `practice${index + 1}`, practiceRun?.goal || '--.---', enteredClass(practiceRun?.updatedAt));
+    }
     setCell(tr, 'r1split', row.r1?.split || '--.---', enteredClass(row.r1?.updatedAt));
     setCell(tr, 'r1goal', row.r1?.goal || '--.---', `${enteredClass(row.r1?.updatedAt)} ${row.r1?.faster ? 'time-faster' : ''}`.trim());
     setCell(tr, 'r2split', row.r2?.split || '--.---', enteredClass(row.r2?.updatedAt));

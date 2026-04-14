@@ -35,6 +35,7 @@ function bindSettingsElements() {
   settingsEls.showOverallBest = document.getElementById('showOverallBest');
   settingsEls.overallBestIncludePractice = document.getElementById('overallBestIncludePractice');
   settingsEls.showEffects = document.getElementById('showEffects');
+  settingsEls.anonymousEntryMode = document.getElementById('anonymousEntryMode');
   settingsEls.memoTitle = document.getElementById('memoTitle');
   settingsEls.clientList = document.getElementById('clientList');
   settingsEls.auditLogs = document.getElementById('auditLogs');
@@ -58,6 +59,7 @@ function bindSettingsEvents() {
   settingsEls.clearLogsBtn?.addEventListener('click', clearLogsOnly);
   settingsEls.reloadLogsBtn?.addEventListener('click', loadAuditLogs);
   settingsEls.reloadApisBtn?.addEventListener('click', loadApiCatalog);
+  settingsEls.anonymousEntryMode?.addEventListener('change', syncAnonymousModeUi);
 }
 
 async function loadAll() {
@@ -70,6 +72,7 @@ async function loadSettings() {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     const data = await res.json();
     applySettingsToForm(data);
+    syncAnonymousModeUi();
   } catch (err) {
     console.error(err);
     alert('設定の読み込みに失敗しました');
@@ -107,6 +110,7 @@ function applySettingsToForm(data) {
   settingsEls.showOverallBest.checked = Boolean(data.showOverallBest);
   settingsEls.overallBestIncludePractice.checked = Boolean(data.overallBestIncludePractice);
   settingsEls.showEffects.checked = Boolean(data.showEffects);
+  if (settingsEls.anonymousEntryMode) settingsEls.anonymousEntryMode.checked = Boolean(data.anonymousEntryMode);
   settingsEls.memoTitle.value = data.memoTitle ?? 'メモ';
 }
 
@@ -132,6 +136,7 @@ async function saveSettings(event) {
     showOverallBest: settingsEls.showOverallBest.checked,
     overallBestIncludePractice: settingsEls.overallBestIncludePractice.checked,
     showEffects: settingsEls.showEffects.checked,
+    anonymousEntryMode: settingsEls.anonymousEntryMode?.checked ?? false,
     memoTitle: settingsEls.memoTitle.value.trim() || 'メモ',
     autoBackupIntervalMin: Number(settingsEls.autoBackupIntervalMin.value || 5),
   };
@@ -355,4 +360,11 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function syncAnonymousModeUi() {
+  const anonymousMode = Boolean(settingsEls.anonymousEntryMode?.checked);
+  if (!settingsEls.showPractice) return;
+  if (anonymousMode) settingsEls.showPractice.checked = true;
+  settingsEls.showPractice.disabled = anonymousMode;
 }

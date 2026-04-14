@@ -51,6 +51,13 @@ function initDb(db) {
       db.exec('ALTER TABLE settings ADD COLUMN slide_page_ms INTEGER NOT NULL DEFAULT 7000');
       db.exec('UPDATE settings SET slide_page_ms = 7000 WHERE slide_page_ms IS NULL OR slide_page_ms <= 0');
     }
+    if (!settingsColumns.some((column) => column.name === 'anonymous_entry_mode')) {
+      db.exec('ALTER TABLE settings ADD COLUMN anonymous_entry_mode INTEGER NOT NULL DEFAULT 0');
+    }
+    const entryColumns = db.prepare('PRAGMA table_info(entries)').all();
+    if (!entryColumns.some((column) => column.name === 'is_anonymous')) {
+      db.exec('ALTER TABLE entries ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0');
+    }
 
     const settingsTable = db.prepare(`
       SELECT sql
@@ -60,7 +67,8 @@ function initDb(db) {
     if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (15, 20, 30, 35, 40)')
       || !settingsTable.sql.includes('slide_page_ms')
       || !settingsTable.sql.includes('request_log_mode')
-      || !settingsTable.sql.includes('show_delta'))) {
+      || !settingsTable.sql.includes('show_delta')
+      || !settingsTable.sql.includes('anonymous_entry_mode'))) {
       db.exec(`
         ALTER TABLE settings RENAME TO settings_old;
         CREATE TABLE settings (
@@ -85,6 +93,7 @@ function initDb(db) {
           show_overall_best INTEGER NOT NULL DEFAULT 1,
           overall_best_include_practice INTEGER NOT NULL DEFAULT 0,
           show_effects INTEGER NOT NULL DEFAULT 1,
+          anonymous_entry_mode INTEGER NOT NULL DEFAULT 0,
           memo_title TEXT NOT NULL DEFAULT 'Memo',
           auto_backup_interval_min INTEGER NOT NULL DEFAULT 5,
           created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -94,7 +103,7 @@ function initDb(db) {
           id, event_name, class_name, language, rows_per_page, slide_page_ms, display_sort_mode, request_log_mode,
           show_kana, show_car_no, show_practice, show_memo, show_split, show_delta,
           show_clock, show_last_update, show_overall_best, overall_best_include_practice,
-          show_effects, memo_title, auto_backup_interval_min, created_at, updated_at
+          show_effects, anonymous_entry_mode, memo_title, auto_backup_interval_min, created_at, updated_at
         )
         SELECT
           id, event_name, class_name, language,
@@ -106,7 +115,7 @@ function initDb(db) {
           COALESCE(show_memo, 0), show_split, COALESCE(show_delta, 1),
           show_clock, show_last_update, show_overall_best,
           COALESCE(overall_best_include_practice, 0),
-          show_effects, COALESCE(memo_title, 'Memo'), auto_backup_interval_min, created_at, updated_at
+          show_effects, COALESCE(anonymous_entry_mode, 0), COALESCE(memo_title, 'Memo'), auto_backup_interval_min, created_at, updated_at
         FROM settings_old;
         DROP TABLE settings_old;
       `);

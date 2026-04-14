@@ -464,6 +464,8 @@ function render(data) {
   document.getElementById('sumRanked').textContent = data.summary?.ranked ?? 0;
   document.getElementById('sumUnrun').textContent = data.summary?.unrun ?? 0;
   document.getElementById('sumLast').textContent = data.summary?.lastEntry ?? '-';
+  const anonymousModeBadge = document.getElementById('anonymousModeBadge');
+  if (anonymousModeBadge) anonymousModeBadge.hidden = !data.anonymousEntryMode;
 
   document.querySelectorAll('[data-status]').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.status === data.status);
@@ -638,6 +640,14 @@ function renderQueueList() {
 
 async function saveRun(options = {}) {
   const keepSelection = options.keepSelection !== false;
+
+  if (!selectedEntry?.id && controlState?.anonymousEntryMode) {
+    const row = await postJson('/api/control/action/ensure-anonymous-entry', {});
+    if (row?.id) {
+      setSelectedEntry(row);
+      await loadControlState(row.id);
+    }
+  }
 
   if (!selectedEntry?.id) {
     alert('Select an entry first');

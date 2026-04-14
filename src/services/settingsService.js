@@ -21,6 +21,7 @@ function getSettings(db) {
     showOverallBest: toBool(row.show_overall_best),
     overallBestIncludePractice: toBool(row.overall_best_include_practice),
     showEffects: toBool(row.show_effects),
+    anonymousEntryMode: toBool(row.anonymous_entry_mode),
     memoTitle: row.memo_title,
     autoBackupIntervalMin: row.auto_backup_interval_min,
   };
@@ -49,6 +50,9 @@ function updateSettings(db, payload) {
       ? current.overall_best_include_practice
       : Number(Boolean(payload.overallBestIncludePractice)),
     show_effects: payload.showEffects === undefined ? current.show_effects : Number(Boolean(payload.showEffects)),
+    anonymous_entry_mode: payload.anonymousEntryMode === undefined
+      ? current.anonymous_entry_mode
+      : Number(Boolean(payload.anonymousEntryMode)),
     memo_title: payload.memoTitle ?? current.memo_title,
     auto_backup_interval_min: payload.autoBackupIntervalMin ?? current.auto_backup_interval_min,
   };
@@ -73,6 +77,7 @@ function updateSettings(db, payload) {
       show_overall_best = @show_overall_best,
       overall_best_include_practice = @overall_best_include_practice,
       show_effects = @show_effects,
+      anonymous_entry_mode = @anonymous_entry_mode,
       memo_title = @memo_title,
       auto_backup_interval_min = @auto_backup_interval_min,
       updated_at = CURRENT_TIMESTAMP

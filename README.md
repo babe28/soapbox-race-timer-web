@@ -1,6 +1,7 @@
 # soapbox-timer-skeleton
 
-ソープボックスダービー向けのタイム表示・運営制御サーバーの雛形です。
+ソープボックスダービー向けのタイム表示・運営制御サーバーです。
+リザルト表示に特化しています。
 
 ## 構成
 - Node.js + Express
@@ -17,6 +18,7 @@
 - 表示画面向け集計API
 - Race Control向け集計API
 - WebSocket通知
+- OBS向けHTML出力（ベストタイム・走行者）
 
 ## セットアップ
 
@@ -39,20 +41,9 @@ npm start
 - `HOST`
 - `DB_PATH`
 
-## Windowsでも動くようにした
-動きます。Node.js 20系以降が無難です。
+## Windowsでも動くようにしました
+Node.js 20系以降推奨
 
-### Windowsだけで始めるなら
-1. Node.js LTS を入れる
-2. このフォルダで `npm install`
-3. `npm run init-db`
-4. `npm run dev`
-5. ブラウザで `http://localhost:3000`
-
-### Linuxサーバーに移すなら
-- DBは `data/soapbox.db`
-- このプロジェクト一式をコピーすれば起動できます
-- 将来は systemd や PM2 で常駐したい
 
 ## API入口
 - `/api/health`

@@ -57,10 +57,19 @@
 .settings-group {
   display: grid;
   gap: 12px;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(12, 20, 38, 0.68);
+}
+
+.settings-subgroup {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(149, 168, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(8, 14, 28, 0.58);
 }
 
 .group-title {
@@ -88,6 +97,12 @@
   gap: 10px;
 }
 
+.settings-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .field-label {
   display: block;
   width: 100%;
@@ -109,6 +124,11 @@
 .rows-per-page-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.radio-stack {
+  display: grid;
   gap: 10px;
 }
 
@@ -138,6 +158,75 @@
 .radio-card span:last-child,
 .check-card span:last-child {
   line-height: 1.5;
+}
+
+.feature-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(124, 231, 255, 0.22);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(124, 231, 255, 0.08), rgba(12, 20, 38, 0.96)),
+    #0c1426;
+}
+
+.feature-toggle-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.feature-toggle-copy strong {
+  font-size: 16px;
+  color: #eef3ff;
+}
+
+.feature-toggle-copy small {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.toggle-switch {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle-slider {
+  display: inline-flex;
+  width: 64px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(77, 92, 138, 0.9);
+  border: 1px solid rgba(149, 168, 255, 0.28);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.toggle-slider::after {
+  content: '';
+  width: 28px;
+  height: 28px;
+  margin: 3px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  transition: transform 0.18s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(180deg, #3dd9a5 0%, #179d74 100%);
+  border-color: rgba(61, 217, 165, 0.55);
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(28px);
 }
 
 .danger-button {
@@ -267,10 +356,15 @@
     align-items: stretch;
   }
 
+  .settings-inline-grid,
   .group-grid-two,
   .rows-per-page-grid,
   .radio-card-group,
   .check-grid {
     grid-template-columns: 1fr;
+  }
+
+  .feature-toggle-card {
+    align-items: flex-start;
   }
 }

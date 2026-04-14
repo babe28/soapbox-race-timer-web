@@ -1,7 +1,12 @@
 const express = require('express');
+const { createAnonymousEntry } = require('../services/anonymousEntryService');
 
 function createEntriesRouter(db, wsHub) {
   const router = express.Router();
+  const insertEntryStmt = db.prepare(`
+    INSERT INTO entries (bib_no, name, kana, car_no, start_order, effective_order, memo)
+    VALUES (@bib_no, @name, @kana, @car_no, @start_order, @effective_order, @memo)
+  `);
 
   router.get('/', (req, res) => {
     const includeRuns = req.query.includeRuns === 'true';
@@ -18,12 +23,81 @@ function createEntriesRouter(db, wsHub) {
     res.json({ ...row, runs });
   });
 
+  router.post('/import', (req, res) => {
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+    if (!rows.length) {
+      return res.status(400).json({ error: 'No rows to import' });
+    }
+
+    const normalizedRows = [];
+    const bibSet = new Set();
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index] || {};
+      const bibNo = Number(row.bibNo);
+      const startOrder = Number(row.startOrder);
+      const effectiveOrder = Number(row.effectiveOrder ?? row.startOrder);
+      const name = String(row.name || '').trim();
+      const kana = row.kana == null ? null : String(row.kana).trim() || null;
+      const carNo = row.carNo == null ? null : String(row.carNo).trim() || null;
+      const memo = row.memo == null ? null : String(row.memo).trim() || null;
+
+      if (!Number.isInteger(bibNo) || bibNo <= 0) {
+        return res.status(400).json({ error: `Row ${index + 1}: Bib No must be a positive integer` });
+      }
+      if (bibSet.has(bibNo)) {
+        return res.status(400).json({ error: `Row ${index + 1}: Duplicate Bib No ${bibNo} in CSV` });
+      }
+      if (!name) {
+        return res.status(400).json({ error: `Row ${index + 1}: Name is required` });
+      }
+      if (!Number.isInteger(startOrder) || startOrder <= 0) {
+        return res.status(400).json({ error: `Row ${index + 1}: Start Order must be a positive integer` });
+      }
+      if (!Number.isInteger(effectiveOrder) || effectiveOrder <= 0) {
+        return res.status(400).json({ error: `Row ${index + 1}: Display Order must be a positive integer` });
+      }
+
+      bibSet.add(bibNo);
+      normalizedRows.push({
+        bib_no: bibNo,
+        name,
+        kana,
+        car_no: carNo,
+        start_order: startOrder,
+        effective_order: effectiveOrder,
+        memo,
+      });
+    }
+
+    const existingBibRows = db.prepare('SELECT bib_no FROM entries WHERE bib_no IN (' + normalizedRows.map(() => '?').join(', ') + ')')
+      .all(...normalizedRows.map((row) => row.bib_no));
+    if (existingBibRows.length) {
+      return res.status(400).json({
+        error: `Duplicate Bib No already exists: ${existingBibRows.map((row) => row.bib_no).join(', ')}`,
+      });
+    }
+
+    const tx = db.transaction((importRows) => {
+      const insertedIds = [];
+      for (const row of importRows) {
+        const info = insertEntryStmt.run(row);
+        insertedIds.push(Number(info.lastInsertRowid));
+      }
+      return insertedIds;
+    });
+
+    const insertedIds = tx(normalizedRows);
+    const insertedRows = insertedIds.map((id) => db.prepare('SELECT * FROM entries WHERE id = ?').get(id));
+
+    wsHub.broadcast('entry_updated');
+    wsHub.broadcast('display_update');
+    res.status(201).json({ count: insertedRows.length, rows: insertedRows });
+  });
+
   router.post('/', (req, res) => {
     const body = req.body || {};
-    const info = db.prepare(`
-      INSERT INTO entries (bib_no, name, kana, car_no, start_order, effective_order, memo)
-      VALUES (@bib_no, @name, @kana, @car_no, @start_order, @effective_order, @memo)
-    `).run({
+    const info = insertEntryStmt.run({
       bib_no: body.bibNo,
       name: body.name,
       kana: body.kana || null,
@@ -33,6 +107,13 @@ function createEntriesRouter(db, wsHub) {
       memo: body.memo || null,
     });
     const row = db.prepare('SELECT * FROM entries WHERE id = ?').get(info.lastInsertRowid);
+    wsHub.broadcast('entry_updated');
+    wsHub.broadcast('display_update');
+    res.status(201).json(row);
+  });
+
+  router.post('/anonymous', (_req, res) => {
+    const row = createAnonymousEntry(db);
     wsHub.broadcast('entry_updated');
     wsHub.broadcast('display_update');
     res.status(201).json(row);

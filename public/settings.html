@@ -13,11 +13,11 @@
     <header class="page-header">
       <div>
         <h1>設定</h1>
-        <p class="page-subtitle">大会情報、表示項目、保守メニューをまとめて調整できます。</p>
+        <p class="page-subtitle">運営設定、表示レイアウト、保存まわりをひとつの画面でまとめて調整できます。</p>
       </div>
       <div class="header-actions">
         <a class="ghost-button" href="/entries.html">エントリー編集</a>
-        <a class="ghost-button" href="/control.html">レース操作</a>
+        <a class="ghost-button" href="/control.html">レースコントロール</a>
         <a class="ghost-button" href="/display.html" target="_blank" rel="noopener noreferrer">表示画面を開く</a>
       </div>
     </header>
@@ -26,14 +26,15 @@
       <section class="panel">
         <div class="panel-section">
           <div class="section-title">基本設定</div>
-          <p class="section-description">関連する項目ごとにまとめて調整できます。</p>
+          <p class="section-description">イベント名や言語、匿名走行モードなど、運用の前提になる設定です。</p>
+
           <form id="settingsForm" class="settings-form">
             <section class="settings-group full-width">
-              <div class="group-title">大会情報</div>
-              <p class="group-description">表示画面や操作画面の見出しに使う情報です。</p>
+              <div class="group-title">イベント情報</div>
+              <p class="group-description">表示画面と操作画面の見出しに使う名称です。</p>
               <div class="group-grid group-grid-two">
                 <label>
-                  <span>大会名</span>
+                  <span>イベント名</span>
                   <input type="text" id="eventName" />
                 </label>
                 <label>
@@ -45,7 +46,7 @@
 
             <section class="settings-group full-width">
               <div class="group-title">システム設定</div>
-              <p class="group-description">表示言語や自動バックアップの動作を設定します。</p>
+              <p class="group-description">言語、バックアップ、匿名走行の動作を設定します。</p>
               <div class="group-grid group-grid-two">
                 <label>
                   <span>表示言語</span>
@@ -59,62 +60,92 @@
                   <input type="number" id="autoBackupIntervalMin" min="1" step="1" />
                 </label>
               </div>
+
+              <label class="feature-toggle-card" for="anonymousEntryMode">
+                <span class="feature-toggle-copy">
+                  <strong>匿名走行モード</strong>
+                  <small>選手エントリーなしで保存すると、No・車番・名前を連番で自動作成します。表示画面は練習タイム表示になります。</small>
+                </span>
+                <span class="toggle-switch">
+                  <input type="checkbox" id="anonymousEntryMode" />
+                  <span class="toggle-slider" aria-hidden="true"></span>
+                </span>
+              </label>
             </section>
 
             <section class="settings-group full-width">
               <div class="group-title">表示レイアウト</div>
-              <p class="group-description">ランキングの並び方や行数、ログ出力の粒度を決めます。</p>
+              <p class="group-description">表示画面のサイズ感や並び順を整理して調整できます。</p>
 
-              <div class="radio-card-group full-width">
-                <span class="field-label">1ページの表示行数</span>
-                <div class="rows-per-page-grid">
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="15" /> <span>15行 + スライド</span></label>
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="20" /> <span>20行</span></label>
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="30" /> <span>30行</span></label>
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="35" /> <span>35行</span></label>
-                <label class="radio-card"><input type="radio" name="rowsPerPage" value="40" /> <span>40行</span></label>
-                </div>
-              </div>
-
-              <div class="group-grid group-grid-two">
-                <label>
-                  <span>スライド切替秒数</span>
-                  <input type="number" id="slidePageSeconds" min="2" max="30" step="0.5" />
-                </label>
-              </div>
-
-              <div class="group-grid group-grid-two compact-gap">
-                <div class="radio-card-group full-width">
-                  <span class="field-label">表示順</span>
-                  <label class="radio-card"><input type="radio" name="displaySortMode" value="time" /> <span>タイム順</span></label>
-                  <label class="radio-card"><input type="radio" name="displaySortMode" value="bib" /> <span>ゼッケン順</span></label>
+              <div class="settings-inline-grid">
+                <div class="settings-subgroup">
+                  <span class="field-label">表示サイズ</span>
+                  <div class="rows-per-page-grid">
+                    <label class="radio-card"><input type="radio" name="rowsPerPage" value="15" /> <span>15行 + スライド</span></label>
+                    <label class="radio-card"><input type="radio" name="rowsPerPage" value="20" /> <span>20行</span></label>
+                    <label class="radio-card"><input type="radio" name="rowsPerPage" value="30" /> <span>30行</span></label>
+                    <label class="radio-card"><input type="radio" name="rowsPerPage" value="35" /> <span>35行</span></label>
+                    <label class="radio-card"><input type="radio" name="rowsPerPage" value="40" /> <span>40行</span></label>
+                  </div>
+                  <label>
+                    <span>スライド秒数</span>
+                    <input type="number" id="slidePageSeconds" min="2" max="30" step="0.5" />
+                  </label>
                 </div>
 
-                <div class="radio-card-group full-width">
-                  <span class="field-label">サーバーログ出力</span>
-                  <label class="radio-card"><input type="radio" name="requestLogMode" value="off" /> <span>OFF</span></label>
-                  <label class="radio-card"><input type="radio" name="requestLogMode" value="errors" /> <span>エラーのみ</span></label>
-                  <label class="radio-card"><input type="radio" name="requestLogMode" value="writes" /> <span>更新系のみ</span></label>
-                  <label class="radio-card"><input type="radio" name="requestLogMode" value="all" /> <span>すべて</span></label>
+                <div class="settings-subgroup">
+                  <span class="field-label">並び順</span>
+                  <div class="radio-stack">
+                    <label class="radio-card"><input type="radio" name="displaySortMode" value="time" /> <span>タイム順</span></label>
+                    <label class="radio-card"><input type="radio" name="displaySortMode" value="bib" /> <span>ゼッケン順</span></label>
+                  </div>
+                </div>
+
+                <div class="settings-subgroup">
+                  <span class="field-label">サーバーログ</span>
+                  <div class="radio-stack">
+                    <label class="radio-card"><input type="radio" name="requestLogMode" value="off" /> <span>OFF</span></label>
+                    <label class="radio-card"><input type="radio" name="requestLogMode" value="errors" /> <span>エラーのみ</span></label>
+                    <label class="radio-card"><input type="radio" name="requestLogMode" value="writes" /> <span>更新時のみ</span></label>
+                    <label class="radio-card"><input type="radio" name="requestLogMode" value="all" /> <span>すべて</span></label>
+                  </div>
                 </div>
               </div>
             </section>
 
             <section class="settings-group full-width">
               <div class="group-title">表示項目</div>
-              <p class="group-description">表示画面に出す情報を選びます。ON/OFF はここで確認できます。</p>
-              <div class="check-grid full-width">
-                <label class="check-card"><input type="checkbox" id="showKana" /> <span>かなを表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>車番を表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showPractice" /> <span>練習タイムを表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showMemo" /> <span>メモ列を表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showSplit" /> <span>中間タイムを表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showDelta" /> <span>差分を表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showClock" /> <span>現在時刻を表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showLastUpdate" /> <span>更新時刻を表示</span></label>
-                <label class="check-card"><input type="checkbox" id="showOverallBest" /> <span>全体ベストを表示</span></label>
-                <label class="check-card"><input type="checkbox" id="overallBestIncludePractice" /> <span>全体ベストに練習を含める</span></label>
-                <label class="check-card"><input type="checkbox" id="showEffects" /> <span>表示エフェクトを有効にする</span></label>
+              <p class="group-description">表示画面に出す情報をグループごとに整理しました。</p>
+
+              <div class="settings-inline-grid">
+                <div class="settings-subgroup">
+                  <span class="field-label">選手情報</span>
+                  <div class="check-grid full-width">
+                    <label class="check-card"><input type="checkbox" id="showKana" /> <span>かなを表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showCarNo" /> <span>車番を表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showMemo" /> <span>メモ列を表示</span></label>
+                  </div>
+                </div>
+
+                <div class="settings-subgroup">
+                  <span class="field-label">タイム列</span>
+                  <div class="check-grid full-width">
+                    <label class="check-card"><input type="checkbox" id="showPractice" /> <span>練習タイムを表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showSplit" /> <span>中間タイムを表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showDelta" /> <span>差分を表示</span></label>
+                  </div>
+                </div>
+
+                <div class="settings-subgroup">
+                  <span class="field-label">ヘッダー / フッター</span>
+                  <div class="check-grid full-width">
+                    <label class="check-card"><input type="checkbox" id="showClock" /> <span>現在時刻を表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showLastUpdate" /> <span>更新時刻を表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="showOverallBest" /> <span>全体ベストを表示</span></label>
+                    <label class="check-card"><input type="checkbox" id="overallBestIncludePractice" /> <span>全体ベストに練習を含める</span></label>
+                    <label class="check-card"><input type="checkbox" id="showEffects" /> <span>表示エフェクトを有効にする</span></label>
+                  </div>
+                </div>
               </div>
 
               <label class="full-width">
@@ -133,31 +164,31 @@
 
       <section class="panel">
         <div class="panel-section">
-          <div class="section-title">接続先</div>
-          <p class="section-description">同じネットワーク内の端末からアクセスする際の IPv4 アドレスです。</p>
+          <div class="section-title">接続情報</div>
+          <p class="section-description">同じネットワーク内からアクセスできるアドレスです。</p>
           <div class="server-address-card server-card">
             <span class="label">サーバー IPv4 アドレス</span>
             <strong class="value" id="settingsServerAddress">読み込み中...</strong>
             <div class="server-address-list" id="settingsServerAddressList" hidden></div>
-            <div class="server-origin-note" id="settingsServerOrigin">アクセス元: 読み込み中...</div>
+            <div class="server-origin-note" id="settingsServerOrigin">アクセス元を読み込み中...</div>
           </div>
         </div>
 
         <div class="panel-section">
           <div class="section-title">メンテナンス</div>
-          <p class="section-description">データの書き出しや、必要に応じたクリア操作を行います。</p>
+          <p class="section-description">結果の書き出しや、必要時のクリア操作です。</p>
           <div class="button-grid">
-            <button id="exportCsvBtn" type="button" class="primary">CSVを書き出し</button>
-            <button id="reloadLogsBtn" type="button">操作ログを再読み込み</button>
-            <button id="clearRunsBtn" type="button" class="warn-button">タイムのみ消去</button>
-            <button id="clearLogsBtn" type="button" class="warn-button">操作ログを消去</button>
+            <button id="exportCsvBtn" type="button" class="primary">CSVを書き出す</button>
+            <button id="reloadLogsBtn" type="button">監査ログを再読み込み</button>
+            <button id="clearRunsBtn" type="button" class="warn-button">タイムだけ消去</button>
+            <button id="clearLogsBtn" type="button" class="warn-button">監査ログを消去</button>
             <button id="resetDbBtn" type="button" class="danger-button">データベース初期化</button>
           </div>
         </div>
 
         <div class="panel-section">
-          <div class="section-title">操作ログ</div>
-          <p class="section-description">最近の操作履歴を確認できます。表示件数が多い場合はこの中だけスクロールします。</p>
+          <div class="section-title">監査ログ</div>
+          <p class="section-description">最近の更新履歴です。</p>
           <div class="log-list is-scrollable" id="auditLogs">
             <div class="log-row"><span>読み込み中...</span></div>
           </div>
@@ -165,7 +196,7 @@
 
         <div class="panel-section">
           <div class="section-title">接続クライアント</div>
-          <p class="section-description">最近アクセスのあった端末と利用経路を確認できます。</p>
+          <p class="section-description">最近アクセスしていた端末を表示します。</p>
           <div class="api-list" id="clientList">
             <div class="api-row"><span>読み込み中...</span></div>
           </div>
@@ -177,10 +208,10 @@
       <div class="panel-section">
         <div class="api-catalog-header">
           <div>
-            <div class="section-title">API一覧</div>
-            <p class="section-description">外部連携やデバッグ時の参照用です。用途ごとにカード表示で見やすくしています。</p>
+            <div class="section-title">API 一覧</div>
+            <p class="section-description">外部連携やデバッグで使うエンドポイント一覧です。</p>
           </div>
-          <button id="reloadApisBtn" type="button">API一覧を再読み込み</button>
+          <button id="reloadApisBtn" type="button">API 一覧を再読み込み</button>
         </div>
         <div class="api-list api-catalog-grid" id="apiCatalog">
           <div class="api-row"><span>読み込み中...</span></div>

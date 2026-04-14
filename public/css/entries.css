@@ -38,6 +38,9 @@
 .heat-form {
   margin-bottom: 18px;
 }
+.csv-import-form {
+  grid-template-columns: 1fr;
+}
 .full-width {
   grid-column: 1 / -1;
 }
@@ -85,6 +88,9 @@
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
+}
+.csv-import-form input[type="file"] {
+  padding: 10px 12px;
 }
 .toolbar-note {
   margin: -2px 0 14px;

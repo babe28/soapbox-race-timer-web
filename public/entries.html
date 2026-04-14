@@ -97,6 +97,23 @@
             </div>
           </form>
         </div>
+
+        <div class="panel-section">
+          <div class="section-title">CSV Import</div>
+          <div class="entry-form csv-import-form">
+            <label class="full-width">
+              <span>CSV File</span>
+              <input type="file" id="csvFile" accept=".csv,text/csv" />
+            </label>
+
+            <p class="form-note full-width">Header example: `Bib No,Name,Kana,Car No,Start Order,Display Order,Memo`</p>
+            <p class="form-note full-width">`Bib No`, `Car No`, `Start Order`, `Display Order` can be omitted and will continue with the next available number.</p>
+
+            <div class="button-row action-row full-width">
+              <button id="importCsvBtn" class="primary" type="button">Import CSV</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="panel">
@@ -148,6 +165,6 @@
   </div>
 
   <script src="/js/common.js"></script>
-  <script src="/js/entries.js?v=1.0.0" defer></script>
+  <script src="/js/entries.js?v=1.1.0" defer></script>
 </body>
 </html>
