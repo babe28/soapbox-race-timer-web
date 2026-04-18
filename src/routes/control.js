@@ -5,16 +5,28 @@ const { clearOverlayPreview, setOverlayPreview } = require('../services/overlayP
 const { clearSelectionPreview, setSelectionPreview } = require('../services/selectionPreviewService');
 const { createAnonymousEntry } = require('../services/anonymousEntryService');
 
-function normalizeExternalTimerValue(value, label) {
+function normalizeExternalTimerValue(value, label, { required = true } = {}) {
   const text = String(value ?? '').trim();
   if (!text) {
+    if (!required) {
+      return { raw: '', formatted: '' };
+    }
     return { error: `${label} is required` };
   }
   if (text.includes('?')) {
     return { error: `${label} contains unreadable digits` };
   }
+
+  if (/^\d+\.\d{1,3}$/.test(text)) {
+    const [secondsText, millisecondsText = '0'] = text.split('.');
+    return {
+      raw: text,
+      formatted: `${Number(secondsText)}.${millisecondsText.padEnd(3, '0').slice(0, 3)}`,
+    };
+  }
+
   if (!/^\d+$/.test(text)) {
-    return { error: `${label} must contain digits only` };
+    return { error: `${label} must contain digits only or SS.sss` };
   }
 
   const padded = text.padStart(4, '0');
@@ -130,7 +142,7 @@ function createControlRouter(db, wsHub, controlLockService) {
   });
 
   router.post('/external-time', (req, res) => {
-    const upperResult = normalizeExternalTimerValue(req.body?.upper, 'upper');
+    const upperResult = normalizeExternalTimerValue(req.body?.upper, 'upper', { required: false });
     const lowerResult = normalizeExternalTimerValue(req.body?.lower, 'lower');
     const error = upperResult.error || lowerResult.error;
 
@@ -148,6 +160,38 @@ function createControlRouter(db, wsHub, controlLockService) {
     };
     wsHub.broadcast('external_timer_input', payload);
     res.json({ ok: true, ...payload });
+  });
+
+  router.post('/sensor-trigger', (req, res) => {
+    const before = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+    db.prepare(`
+      UPDATE display_state
+      SET current_status = 'running',
+          starter_ready = 0,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = 1
+    `).run();
+    const after = db.prepare('SELECT * FROM display_state WHERE id = 1').get();
+
+    logAudit(db, {
+      actionType: 'change_status',
+      targetType: 'display_state',
+      targetId: 1,
+      before,
+      after,
+    });
+
+    const payload = {
+      message: req.body?.message
+        ? String(req.body.message)
+        : 'Start sensor triggered. Race status changed to RUNNING.',
+      receivedAt: new Date().toISOString(),
+    };
+
+    wsHub.broadcast('sensor_triggered', payload);
+    wsHub.broadcast('state_update');
+    wsHub.broadcast('display_update');
+    res.json({ ok: true, status: 'running', ...payload });
   });
 
   router.post('/action/set-now', (req, res) => {

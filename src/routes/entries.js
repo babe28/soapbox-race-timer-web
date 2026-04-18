@@ -180,15 +180,26 @@ function createEntriesRouter(db, wsHub) {
     if (!current) return res.status(404).json({ error: 'Entry not found' });
 
     const tx = db.transaction(() => {
+      db.prepare(`
+        UPDATE display_state
+        SET now_running_entry_id = CASE WHEN now_running_entry_id = ? THEN NULL ELSE now_running_entry_id END,
+            next_entry_id = CASE WHEN next_entry_id = ? THEN NULL ELSE next_entry_id END,
+            overall_best_run_id = CASE
+              WHEN overall_best_run_id IN (SELECT id FROM runs WHERE entry_id = ?) THEN NULL
+              ELSE overall_best_run_id
+            END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = 1
+      `).run(id, id, id);
       db.prepare('DELETE FROM runs WHERE entry_id = ?').run(id);
       db.prepare('DELETE FROM entry_order_history WHERE entry_id = ?').run(id);
       db.prepare('DELETE FROM entries WHERE id = ?').run(id);
-      db.prepare('UPDATE display_state SET now_running_entry_id = NULL WHERE now_running_entry_id = ?').run(id);
-      db.prepare('UPDATE display_state SET next_entry_id = NULL WHERE next_entry_id = ?').run(id);
     });
 
     tx();
     wsHub.broadcast('entry_updated');
+    wsHub.broadcast('run_updated');
+    wsHub.broadcast('state_update');
     wsHub.broadcast('display_update');
     res.json({ ok: true });
   });

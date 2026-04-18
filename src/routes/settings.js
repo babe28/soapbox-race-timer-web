@@ -59,7 +59,7 @@ function getApiCatalog() {
     { method: 'DELETE', path: '/api/runs/:id', category: 'runs', description: '走行データを削除します。', notes: '誤記録の削除用です。' },
     { method: 'GET', path: '/api/display/current', category: 'display', description: '表示画面用の描画データを取得します。', notes: 'ランキング、見出し、現在走行情報をまとめて返します。' },
     { method: 'GET', path: '/api/control/state', category: 'control', description: 'レース操作画面の状態を取得します。', notes: '現在走行、次走、キュー状況などを含みます。' },
-    { method: 'POST', path: '/api/control/external-time', category: 'control', description: '外部計測のタイムを操作画面へ反映します。', notes: '外部タイマー連携向けです。' },
+    { method: 'POST', path: '/api/control/external-time', category: 'control', description: '外部計測のタイムを操作画面へ反映します。', notes: '外部タイマー連携向けです。upper / lower に digit-only（例: 12345 → 12.345）または SS.sss（例: 12.345）を指定できます。' },
     { method: 'POST', path: '/api/control/action/set-now', category: 'control', description: '現在走行中の選手を設定します。', notes: '手動で現在走行枠を切り替えます。' },
     { method: 'POST', path: '/api/control/action/set-next', category: 'control', description: '次走の選手を設定します。', notes: '次に走る選手を手動で指定します。' },
     { method: 'POST', path: '/api/control/action/move-next', category: 'control', description: 'キューを次へ進めます。', notes: '現在走行と次走を順送りに更新します。' },

@@ -1,4 +1,4 @@
-let controlState = null;
+﻿let controlState = null;
 let selectedEntry = null;
 let pollTimer = null;
 let pollRequestId = 0;
@@ -151,19 +151,19 @@ function initializeControlSession() {
 
 function showControlLockOverlay(message) {
   showControlLockNotice(
-    message || '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。',
-    'Race Control はすでに開かれています',
+    message || 'Race Control is currently active in another browser. This screen is read-only until the lock is released.',
+    'Race Control is locked',
   );
 }
 
-function showControlLockNotice(message, title = 'Race Control はすでに開かれています') {
+function showControlLockNotice(message, title = 'Race Control is locked') {
   document.body.classList.add('is-locked');
   const overlay = document.getElementById('controlLockOverlay');
   const titleEl = document.getElementById('controlLockTitle');
   const messageEl = document.getElementById('controlLockMessage');
   if (titleEl) titleEl.textContent = title;
   if (messageEl) {
-    messageEl.textContent = message || '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。';
+    messageEl.textContent = message || 'Race Control is currently active in another browser. This screen is read-only until the lock is released.';
   }
   if (overlay) overlay.hidden = false;
 }
@@ -173,9 +173,9 @@ function hideControlLockOverlay() {
   const overlay = document.getElementById('controlLockOverlay');
   const titleEl = document.getElementById('controlLockTitle');
   const messageEl = document.getElementById('controlLockMessage');
-  if (titleEl) titleEl.textContent = 'Race Control はすでに開かれています';
+  if (titleEl) titleEl.textContent = 'Race Control is locked';
   if (messageEl) {
-    messageEl.textContent = '別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。';
+    messageEl.textContent = 'Race Control is currently active in another browser. This screen is read-only until the lock is released.';
   }
   if (overlay) overlay.hidden = true;
 }
@@ -238,8 +238,8 @@ function startControlLockHeartbeat() {
         controlActivated = false;
         stopControlActivity();
         showControlLockNotice(
-          '別の画面が Race Control を使用しています。利用可能になり次第、この画面は自動で有効になります。',
-          'Race Control のロックが失われました',
+          'Race Control is active in another browser. This screen is now read-only.',
+          'Race Control lock was lost',
         );
         scheduleControlLockRetry();
         return;
@@ -267,15 +267,15 @@ async function ensureControlLock(_options = {}) {
       stopControlActivity();
       if (json?.locked === false) {
         showControlLockNotice(
-          'ロック状態の確認が競合したため、再取得を試しています。',
-          'Race Control を確認中です',
+          'The Race Control lock is held by another browser. Refresh after it is released.',
+          'Race Control is in use',
         );
         scheduleControlLockRetry(800);
         return;
       }
       showControlLockNotice(
-        'すでに別のブラウザで Race Control が開かれています。必要なら「強制解放」で解除してください。',
-        'Race Control はすでに開かれています',
+        'Race Control is already open in another browser. Close the other screen or force release the lock.',
+        'Race Control is locked',
       );
       scheduleControlLockRetry();
       return;
@@ -289,8 +289,8 @@ async function ensureControlLock(_options = {}) {
     controlActivated = false;
     stopControlActivity();
     showControlLockNotice(
-      'Race Control のロック確認に失敗しました。サーバーに接続できているか確認してください。',
-      'Race Control に接続できません',
+      'Failed to verify the Race Control lock. Please check the server connection.',
+      'Cannot reach Race Control',
     );
     scheduleControlLockRetry(3000);
   }
@@ -311,8 +311,8 @@ async function forceUnlockAndAcquire() {
     await ensureControlLock({ manual: true });
   } catch (_err) {
     showControlLockNotice(
-      '強制解放に失敗しました。サーバー状態を確認してから再度お試しください。',
-      'Race Control を解放できません',
+      'Failed to force release the lock. Please check the server status and try again.',
+      'Could not unlock Race Control',
     );
   }
 }
@@ -399,11 +399,18 @@ function connectWs() {
         return;
       }
       if (message.type === 'external_timer_input') {
-        applyExternalTimerInput(message);
+        applyExternalTimerInput(message).catch((err) => {
+          console.error(err);
+          showExternalTimerStatus('External timer input was ignored', 'error');
+        });
         return;
       }
       if (message.type === 'external_timer_error') {
         showExternalTimerStatus(message.message || 'External timer input was ignored', 'error');
+        return;
+      }
+      if (message.type === 'sensor_triggered') {
+        showExternalTimerStatus(message.message || 'Start sensor triggered', 'success');
       }
     } catch (_err) {
       // ignore invalid websocket payloads
@@ -475,9 +482,26 @@ function render(data) {
   if (nextBtn) nextBtn.disabled = !selectedEntry?.id && !data.nextEntry?.id;
 }
 
-function applyExternalTimerInput(message) {
-  if (!selectedEntry?.id) {
-    showExternalTimerStatus('外部タイムを受信しましたが、選択中の選手がいないため入力しませんでした。', 'warn');
+async function ensureExternalTimerTargetEntry() {
+  if (selectedEntry?.id) return selectedEntry;
+  if (!controlState?.anonymousEntryMode) return null;
+
+  const row = await postJson('/api/control/action/ensure-anonymous-entry', {});
+  if (!row?.id) return null;
+
+  setSelectedEntry(row);
+  await loadControlState(row.id);
+  return selectedEntry;
+}
+
+async function applyExternalTimerInputLegacy(_message) {
+  return null;
+}
+
+async function applyExternalTimerInput(message) {
+  const targetEntry = await ensureExternalTimerTargetEntry();
+  if (!targetEntry?.id) {
+    showExternalTimerStatus('External timer input arrived, but no target entry is selected.', 'warn');
     return;
   }
 
@@ -487,7 +511,7 @@ function applyExternalTimerInput(message) {
   if (goalInput) goalInput.value = message.goalTime || '';
   scheduleOverlayPreviewSync();
   showExternalTimerStatus(
-    `No.${selectedEntry.bibNo ?? '-'} ${selectedEntry.name ?? ''} に外部タイムを入力しました。 Split ${message.splitTime} / Goal ${message.goalTime}`,
+    `External timer applied to No.${targetEntry.bibNo ?? '-'} ${targetEntry.name ?? ''}. Split ${message.splitTime} / Goal ${message.goalTime}`,
     'success',
   );
 }
