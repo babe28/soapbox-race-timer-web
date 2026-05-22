@@ -525,3 +525,93 @@ body.bs-lite .footer-live {
   background: #30d89a;
   box-shadow: none;
 }
+
+/* Portrait Layout (9:16, 2-line per driver) */
+body.mode-portrait .display-shell {
+  grid-template-rows: 104px minmax(0, 1fr) 92px;
+}
+body.mode-portrait .display-header {
+  gap: 12px;
+  padding: 10px 18px 0;
+}
+body.mode-portrait .display-main {
+  padding: 10px 16px 0;
+}
+body.mode-portrait .results-table,
+body.mode-portrait .results-table thead,
+body.mode-portrait .results-table tbody {
+  display: block;
+}
+body.mode-portrait .results-table tr {
+  display: grid;
+  grid-template-columns: 66px 56px 66px 76px minmax(0, 1fr) auto 110px 120px 110px;
+  grid-template-rows: auto auto;
+  border-bottom: 2px solid rgba(64, 75, 128, 0.38);
+}
+body.mode-portrait .results-table thead tr {
+  border-bottom: 2px solid rgba(149, 168, 255, 0.35);
+  background: linear-gradient(180deg, #27305c 0%, #181f3f 100%);
+  padding: 4px 0;
+}
+body.mode-portrait .results-table tbody tr {
+  padding: 4px 0;
+  background: rgba(20, 28, 56, 0.96);
+}
+body.mode-portrait .results-table tbody tr:nth-child(odd) {
+  background: rgba(22, 30, 61, 0.97);
+}
+body.mode-portrait .results-table tbody tr:nth-child(even) {
+  background: rgba(11, 18, 40, 0.97);
+}
+body.mode-portrait .results-table tbody tr.highlight {
+  background: rgba(52, 64, 118, 0.99);
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 100, 0.18);
+  -webkit-animation: row-highlight-flash 0.7s ease-out 1;
+  animation: row-highlight-flash 0.7s ease-out 1;
+}
+
+body.mode-portrait .results-table th,
+body.mode-portrait .results-table td {
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  background: transparent !important;
+}
+
+/* Grid Assignments */
+body.mode-portrait .col-run-status, body.mode-portrait .cell-run-status { grid-column: 1; grid-row: 1 / 3; }
+body.mode-portrait .col-pos, body.mode-portrait td[data-cell="rank"] { grid-column: 2; grid-row: 1 / 3; }
+body.mode-portrait .col-no, body.mode-portrait td[data-cell="bibNo"] { grid-column: 3; grid-row: 1 / 3; }
+
+body.mode-portrait .col-name, body.mode-portrait .cell-name { grid-column: 4 / 6; grid-row: 1; justify-content: flex-start; font-size: 24px; padding-bottom: 0; }
+body.mode-portrait .col-kana, body.mode-portrait .cell-kana { grid-column: 6; grid-row: 1; justify-content: flex-start; padding-left: 0; font-size: 14px; align-items: flex-end; padding-bottom: 6px; color: #a3b8ff; }
+body.mode-portrait #thR1Split, body.mode-portrait td[data-cell="r1split"] { grid-column: 7; grid-row: 1; font-size: 18px; }
+body.mode-portrait #thR1Goal, body.mode-portrait td[data-cell="r1goal"] { grid-column: 8; grid-row: 1; font-size: 18px; }
+body.mode-portrait #thBest, body.mode-portrait td[data-cell="best"] { grid-column: 9; grid-row: 1; font-size: 18px; }
+
+body.mode-portrait .col-car, body.mode-portrait .cell-car { grid-column: 4; grid-row: 2; justify-content: flex-start; color: #a3b8ff; font-size: 15px; padding-top: 0; }
+body.mode-portrait .col-memo, body.mode-portrait .cell-memo { grid-column: 5 / 7; grid-row: 2; justify-content: flex-start; color: #dbe3ff; font-size: 15px; padding-top: 0; }
+body.mode-portrait #thR2Split, body.mode-portrait td[data-cell="r2split"] { grid-column: 7; grid-row: 2; font-size: 18px; color: #d7ddff; }
+body.mode-portrait #thR2Goal, body.mode-portrait td[data-cell="r2goal"] { grid-column: 8; grid-row: 2; font-size: 18px; color: #d7ddff; }
+body.mode-portrait #thDelta, body.mode-portrait td[data-cell="delta"] { grid-column: 9; grid-row: 2; font-size: 18px; }
+
+/* Practice Columns in Portrait */
+body.mode-portrait.practice-history-mode #thPractice, body.mode-portrait.practice-history-mode td[data-cell="practice"] { grid-column: 9; grid-row: 1 / 3; font-size: 20px; }
+body.mode-portrait #thPractice1, body.mode-portrait td[data-cell="practice1"] { grid-column: 8; grid-row: 1; font-size: 18px; }
+body.mode-portrait #thPractice2, body.mode-portrait td[data-cell="practice2"] { grid-column: 8; grid-row: 2; font-size: 18px; }
+body.mode-portrait #thPractice3, body.mode-portrait td[data-cell="practice3"] { grid-column: 7; grid-row: 1; font-size: 18px; }
+body.mode-portrait #thPractice4, body.mode-portrait td[data-cell="practice4"] { grid-column: 7; grid-row: 2; font-size: 18px; }
+
+body.mode-portrait:not(.practice-history-mode) .practice-attempt-col { display: none !important; }
+
+/* Tweak header th font sizes for portrait */
+body.mode-portrait .results-table thead th { font-size: 14px; padding: 2px 6px; letter-spacing: 0; color: #a1b0ea; }
+body.mode-portrait .results-table thead #thName { font-size: 16px; color: #f2f4ff; }
+body.mode-portrait .results-table thead #thR1Goal, 
+body.mode-portrait .results-table thead #thR2Goal, 
+body.mode-portrait .results-table thead #thBest { color: #f2f4ff; }
+
+/* Status flag sizing */
+body.mode-portrait .results-table .status-flag { font-size: 11px; min-width: 48px; padding: 6px 6px 5px; }

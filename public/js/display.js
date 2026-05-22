@@ -177,6 +177,7 @@
     body.classList.toggle('mode-30', rowsPerPage === 30);
     body.classList.toggle('mode-35', rowsPerPage === 35);
     body.classList.toggle('mode-40', rowsPerPage === 40);
+    body.classList.toggle('mode-portrait', rowsPerPage === 18);
     body.classList.toggle('hide-split', !data.settings?.showSplit);
     body.classList.toggle('practice-only', data.mode === 'practice');
     body.classList.toggle('hide-kana', !data.settings?.showKana);

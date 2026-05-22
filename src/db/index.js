@@ -64,7 +64,7 @@ function initDb(db) {
       FROM sqlite_master
       WHERE type = 'table' AND name = 'settings'
     `).get();
-    if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (15, 20, 30, 35, 40)')
+    if (settingsTable?.sql && (!settingsTable.sql.includes('rows_per_page IN (15, 18, 20, 30, 35, 40)')
       || !settingsTable.sql.includes('slide_page_ms')
       || !settingsTable.sql.includes('request_log_mode')
       || !settingsTable.sql.includes('show_delta')
@@ -76,7 +76,7 @@ function initDb(db) {
           event_name TEXT NOT NULL DEFAULT 'Soap Box Derby',
           class_name TEXT NOT NULL DEFAULT 'Super Stock',
           language TEXT NOT NULL DEFAULT 'en',
-          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (15, 20, 30, 35, 40)),
+          rows_per_page INTEGER NOT NULL DEFAULT 20 CHECK (rows_per_page IN (15, 18, 20, 30, 35, 40)),
           slide_page_ms INTEGER NOT NULL DEFAULT 7000,
           display_sort_mode TEXT NOT NULL DEFAULT 'time'
               CHECK (display_sort_mode IN ('time', 'bib')),
