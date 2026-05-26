@@ -18,10 +18,24 @@ const { createControlRouter } = require('./routes/control');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
-const DB_PATH = path.resolve(process.env.DB_PATH || path.join(process.cwd(), 'data', 'soapbox.db'));
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(process.cwd(), 'data'));
+const DB_PATH = path.resolve(process.env.DB_PATH || path.join(DATA_DIR, 'soapbox.db'));
 
-const db = createDb(DB_PATH);
-initDb(db);
+/** Mutable database holder – allows hot-swap without restarting the server. */
+const dbHolder = {
+  db: null,
+  dbPath: DB_PATH,
+  dataDir: DATA_DIR,
+};
+
+function openDatabase(dbPath) {
+  const db = createDb(dbPath);
+  initDb(db);
+  return db;
+}
+
+dbHolder.db = openDatabase(DB_PATH);
+
 const clientTracker = createClientTracker();
 const controlLockService = createControlLockService();
 
@@ -34,12 +48,12 @@ app.use((req, _res, next) => {
   next();
 });
 app.use(morgan('dev', {
-  skip: (req, res) => shouldSkipRequestLog(db, req, res),
+  skip: (req, res) => shouldSkipRequestLog(dbHolder.db, req, res),
 }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, dbPath: DB_PATH });
+  res.json({ ok: true, dbPath: dbHolder.dbPath });
 });
 
 app.get('/display', (req, res) => {
@@ -65,12 +79,23 @@ app.get('/fastest', (req, res) => {
 const server = http.createServer(app);
 const wsHub = createWsHub(server, clientTracker);
 
-app.use('/api/settings', createSettingsRouter(db, wsHub, clientTracker));
-app.use('/api/heats', createHeatsRouter(db, wsHub));
-app.use('/api/entries', createEntriesRouter(db, wsHub));
-app.use('/api/runs', createRunsRouter(db, wsHub));
-app.use('/api/display', createDisplayRouter(db));
-app.use('/api/control', createControlRouter(db, wsHub, controlLockService));
+/* Proxy object that always forwards to the current database instance.
+   This lets all routers keep a single stable reference while the
+   underlying db can be swapped at runtime. */
+const dbProxy = new Proxy({}, {
+  get(_target, prop, _receiver) {
+    const db = dbHolder.db;
+    const value = db[prop];
+    return typeof value === 'function' ? value.bind(db) : value;
+  },
+});
+
+app.use('/api/settings', createSettingsRouter(dbProxy, wsHub, clientTracker, dbHolder));
+app.use('/api/heats', createHeatsRouter(dbProxy, wsHub));
+app.use('/api/entries', createEntriesRouter(dbProxy, wsHub));
+app.use('/api/runs', createRunsRouter(dbProxy, wsHub));
+app.use('/api/display', createDisplayRouter(dbProxy));
+app.use('/api/control', createControlRouter(dbProxy, wsHub, controlLockService));
 
 app.use((err, _req, res, _next) => {
   console.error(err);

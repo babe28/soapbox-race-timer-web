@@ -461,27 +461,27 @@ body.mode-40 .footer-label { font-size: 11px; }
 body.mode-40 .footer-value { font-size: 17px; }
 body.mode-40 .footer-live { width: 14px; height: 14px; }
 body.hide-split .split-col,
-body.hide-split .cell-split { display: none; }
+body.hide-split .cell-split { display: none !important; }
 body.hide-kana .col-kana,
-body.hide-kana .cell-kana { display: none; }
+body.hide-kana .cell-kana { display: none !important; }
 body.hide-car .col-car,
-body.hide-car .cell-car { display: none; }
+body.hide-car .cell-car { display: none !important; }
 body.hide-memo .col-memo,
-body.hide-memo .cell-memo { display: none; }
+body.hide-memo .cell-memo { display: none !important; }
 body.hide-practice .col-practice,
-body.hide-practice .cell-practice { display: none; }
+body.hide-practice .cell-practice { display: none !important; }
 body.hide-practice .col-practice-attempt,
-body.hide-practice .cell-practice-attempt { display: none; }
+body.hide-practice .cell-practice-attempt { display: none !important; }
 body.hide-delta .col-delta,
-body.hide-delta .cell-delta { display: none; }
-body.practice-only .race-col { display: none; }
-body.practice-history-mode .practice-best-col { display: none; }
-body:not(.practice-history-mode) .practice-attempt-col { display: none; }
+body.hide-delta .cell-delta { display: none !important; }
+body.practice-only .race-col { display: none !important; }
+body.practice-history-mode .practice-best-col { display: none !important; }
+body:not(.practice-history-mode) .practice-attempt-col { display: none !important; }
 body.hide-clock .time-block .clock-value,
-body.hide-clock #labelClock { display: none; }
-body.hide-last-update .time-subvalue { display: none; }
-body.hide-clock.hide-last-update .time-block { display: none; }
-body.hide-overall-best .display-header .best-block { display: none; }
+body.hide-clock #labelClock { display: none !important; }
+body.hide-last-update .time-subvalue { display: none !important; }
+body.hide-clock.hide-last-update .time-block { display: none !important; }
+body.hide-overall-best .display-header .best-block { display: none !important; }
 
 body.bs-lite .display-shell {
   background: linear-gradient(180deg, #050814 0%, #0a1020 48%, #080d17 100%);
@@ -544,17 +544,17 @@ body.mode-portrait .results-table tbody {
 }
 body.mode-portrait .results-table tr {
   display: grid;
-  grid-template-columns: 66px 56px 66px 76px minmax(0, 1fr) auto 110px 120px 110px;
-  grid-template-rows: auto auto;
+  grid-template-columns: 70px 80px minmax(0, 1fr) auto 120px 130px 130px;
+  grid-template-rows: 1fr 1fr;
   border-bottom: 2px solid rgba(64, 75, 128, 0.38);
 }
 body.mode-portrait .results-table thead tr {
   border-bottom: 2px solid rgba(149, 168, 255, 0.35);
   background: linear-gradient(180deg, #27305c 0%, #181f3f 100%);
-  padding: 4px 0;
+  padding: 8px 0;
 }
 body.mode-portrait .results-table tbody tr {
-  padding: 4px 0;
+  padding: 8px 0;
   background: rgba(20, 28, 56, 0.96);
 }
 body.mode-portrait .results-table tbody tr:nth-child(odd) {
@@ -575,36 +575,49 @@ body.mode-portrait .results-table td {
   border: none !important;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px 6px;
+  justify-content: flex-start;
+  padding: 6px 6px;
   background: transparent !important;
 }
 
 /* Grid Assignments */
-body.mode-portrait .col-run-status, body.mode-portrait .cell-run-status { grid-column: 1; grid-row: 1 / 3; }
-body.mode-portrait .col-pos, body.mode-portrait td[data-cell="rank"] { grid-column: 2; grid-row: 1 / 3; }
-body.mode-portrait .col-no, body.mode-portrait td[data-cell="bibNo"] { grid-column: 3; grid-row: 1 / 3; }
+/* Status column is hidden */
+body.mode-portrait .col-run-status, body.mode-portrait .cell-run-status { display: none !important; }
 
-body.mode-portrait .col-name, body.mode-portrait .cell-name { grid-column: 4 / 6; grid-row: 1; justify-content: flex-start; font-size: 24px; padding-bottom: 0; }
-body.mode-portrait .col-kana, body.mode-portrait .cell-kana { grid-column: 6; grid-row: 1; justify-content: flex-start; padding-left: 0; font-size: 14px; align-items: flex-end; padding-bottom: 6px; color: #a3b8ff; }
-body.mode-portrait #thR1Split, body.mode-portrait td[data-cell="r1split"] { grid-column: 7; grid-row: 1; font-size: 18px; }
-body.mode-portrait #thR1Goal, body.mode-portrait td[data-cell="r1goal"] { grid-column: 8; grid-row: 1; font-size: 18px; }
-body.mode-portrait #thBest, body.mode-portrait td[data-cell="best"] { grid-column: 9; grid-row: 1; font-size: 18px; }
+body.mode-portrait .col-pos, body.mode-portrait td[data-cell="rank"] { grid-column: 1; grid-row: 1 / 3; justify-content: center; }
 
-body.mode-portrait .col-car, body.mode-portrait .cell-car { grid-column: 4; grid-row: 2; justify-content: flex-start; color: #a3b8ff; font-size: 15px; padding-top: 0; }
-body.mode-portrait .col-memo, body.mode-portrait .cell-memo { grid-column: 5 / 7; grid-row: 2; justify-content: flex-start; color: #dbe3ff; font-size: 15px; padding-top: 0; }
-body.mode-portrait #thR2Split, body.mode-portrait td[data-cell="r2split"] { grid-column: 7; grid-row: 2; font-size: 18px; color: #d7ddff; }
-body.mode-portrait #thR2Goal, body.mode-portrait td[data-cell="r2goal"] { grid-column: 8; grid-row: 2; font-size: 18px; color: #d7ddff; }
-body.mode-portrait #thDelta, body.mode-portrait td[data-cell="delta"] { grid-column: 9; grid-row: 2; font-size: 18px; }
+/* No/Car on 2 rows */
+body.mode-portrait .col-car, body.mode-portrait .cell-car { grid-column: 2; grid-row: 1; justify-content: center; font-size: 13px; align-items: flex-end; padding-bottom: 2px; color: #a3b8ff; }
+body.mode-portrait .col-no, body.mode-portrait td[data-cell="bibNo"] { grid-column: 2; grid-row: 2; justify-content: center; font-size: 26px; padding-top: 0; align-items: flex-start; }
+
+/* Kana/Memo on Row 1, Name on Row 2 */
+body.mode-portrait .col-kana, body.mode-portrait .cell-kana { grid-column: 3; grid-row: 1; justify-content: flex-start; padding-left: 0; font-size: 13px; align-items: flex-end; padding-bottom: 2px; color: #a3b8ff; }
+body.mode-portrait .col-memo, body.mode-portrait .cell-memo { grid-column: 4; grid-row: 1; justify-content: flex-end; font-size: 13px; color: #dbe3ff; align-items: flex-end; padding-bottom: 2px; padding-right: 10px; }
+body.mode-portrait .col-name, body.mode-portrait .cell-name { grid-column: 3 / 5; grid-row: 2; justify-content: flex-start; font-size: 28px; padding-top: 0; align-items: flex-start; }
+
+/* Times (with horizontal line between R1 and R2) */
+body.mode-portrait #thR1Split, body.mode-portrait td[data-cell="r1split"] { grid-column: 5; grid-row: 1; font-size: 18px; border-bottom: 1px solid rgba(149, 168, 255, 0.15) !important; justify-content: center; }
+body.mode-portrait #thR1Goal, body.mode-portrait td[data-cell="r1goal"] { grid-column: 6; grid-row: 1; font-size: 18px; border-bottom: 1px solid rgba(149, 168, 255, 0.15) !important; justify-content: center; }
+
+body.mode-portrait #thR2Split, body.mode-portrait td[data-cell="r2split"] { grid-column: 5; grid-row: 2; font-size: 18px; color: #d7ddff; justify-content: center; }
+body.mode-portrait #thR2Goal, body.mode-portrait td[data-cell="r2goal"] { grid-column: 6; grid-row: 2; font-size: 18px; color: #d7ddff; justify-content: center; }
+
+/* Best spans both rows */
+body.mode-portrait #thBest, body.mode-portrait td[data-cell="best"] { grid-column: 7; grid-row: 1 / 3; font-size: 24px; color: #ffe96f; justify-content: center; }
+
+/* Hide Delta */
+body.mode-portrait .col-delta, body.mode-portrait .cell-delta { display: none !important; }
 
 /* Practice Columns in Portrait */
-body.mode-portrait.practice-history-mode #thPractice, body.mode-portrait.practice-history-mode td[data-cell="practice"] { grid-column: 9; grid-row: 1 / 3; font-size: 20px; }
-body.mode-portrait #thPractice1, body.mode-portrait td[data-cell="practice1"] { grid-column: 8; grid-row: 1; font-size: 18px; }
-body.mode-portrait #thPractice2, body.mode-portrait td[data-cell="practice2"] { grid-column: 8; grid-row: 2; font-size: 18px; }
-body.mode-portrait #thPractice3, body.mode-portrait td[data-cell="practice3"] { grid-column: 7; grid-row: 1; font-size: 18px; }
-body.mode-portrait #thPractice4, body.mode-portrait td[data-cell="practice4"] { grid-column: 7; grid-row: 2; font-size: 18px; }
+body.mode-portrait.practice-history-mode #thPractice, body.mode-portrait.practice-history-mode td[data-cell="practice"] { grid-column: 7; grid-row: 1 / 3; font-size: 20px; justify-content: center; }
+body.mode-portrait #thPractice1, body.mode-portrait td[data-cell="practice1"] { grid-column: 5; grid-row: 1; font-size: 18px; border-bottom: 1px solid rgba(149, 168, 255, 0.15) !important; justify-content: center; }
+body.mode-portrait #thPractice2, body.mode-portrait td[data-cell="practice2"] { grid-column: 5; grid-row: 2; font-size: 18px; color: #d7ddff; justify-content: center; }
+body.mode-portrait #thPractice3, body.mode-portrait td[data-cell="practice3"] { grid-column: 6; grid-row: 1; font-size: 18px; border-bottom: 1px solid rgba(149, 168, 255, 0.15) !important; justify-content: center; }
+body.mode-portrait #thPractice4, body.mode-portrait td[data-cell="practice4"] { grid-column: 6; grid-row: 2; font-size: 18px; color: #d7ddff; justify-content: center; }
 
 body.mode-portrait:not(.practice-history-mode) .practice-attempt-col { display: none !important; }
+body.mode-portrait:not(.practice-history-mode) .col-practice,
+body.mode-portrait:not(.practice-history-mode) .cell-practice { display: none !important; }
 
 /* Tweak header th font sizes for portrait */
 body.mode-portrait .results-table thead th { font-size: 14px; padding: 2px 6px; letter-spacing: 0; color: #a1b0ea; }
@@ -615,3 +628,19 @@ body.mode-portrait .results-table thead #thBest { color: #f2f4ff; }
 
 /* Status flag sizing */
 body.mode-portrait .results-table .status-flag { font-size: 11px; min-width: 48px; padding: 6px 6px 5px; }
+
+/* Split time styling for practice */
+.split-time {
+  font-size: 0.75em;
+  color: #a1b0ea;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.goal-time {
+  display: block;
+  line-height: 1;
+}
+body.mode-portrait .split-time {
+  display: none !important;
+}

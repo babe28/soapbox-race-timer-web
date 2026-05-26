@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Results Overview</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/results-overview.css" />
+</head>
+<body class="overview-body">
+  <div class="overview-shell">
+    <header class="page-header">
+      <div>
+        <h1>Detailed Results Overview</h1>
+        <p class="page-subtitle">タイム記録一覧 - すべての中間タイムとゴールタイムを表示します</p>
+      </div>
+      <div class="header-actions">
+        <a class="ghost-button" href="/control.html">Race Control</a>
+        <a class="ghost-button" href="/entries.html">Entries / Edit</a>
+        <a class="ghost-button" href="/settings.html">Settings</a>
+      </div>
+    </header>
+
+    <main class="overview-main">
+      <section class="panel">
+        <div class="panel-section">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="summary-strip" id="summaryStrip">
+                <div class="summary-box"><span>Total Entries</span><strong id="sumTotal">0</strong></div>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <div class="connection-status" id="connectionState">Disconnected</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="overview-table" id="overviewTable">
+              <thead>
+                <tr>
+                  <th rowspan="2" class="col-fixed col-rank">Rank</th>
+                  <th rowspan="2" class="col-fixed col-bib">Bib</th>
+                  <th rowspan="2" class="col-fixed col-name">Name</th>
+                  <th colspan="2" class="col-group" id="thGroupPractice1">Practice 1</th>
+                  <th colspan="2" class="col-group" id="thGroupPractice2">Practice 2</th>
+                  <th colspan="2" class="col-group" id="thGroupPractice3">Practice 3</th>
+                  <th colspan="2" class="col-group" id="thGroupPractice4">Practice 4</th>
+                  <th colspan="2" class="col-group" id="thGroupRace1">Race 1</th>
+                  <th colspan="2" class="col-group" id="thGroupRace2">Race 2</th>
+                  <th rowspan="2" class="col-fixed col-best" id="thBest">Best Time</th>
+                </tr>
+                <tr>
+                  <!-- Practice 1 -->
+                  <th class="col-sub">Split</th><th class="col-sub">Goal</th>
+                  <!-- Practice 2 -->
+                  <th class="col-sub">Split</th><th class="col-sub">Goal</th>
+                  <!-- Practice 3 -->
+                  <th class="col-sub">Split</th><th class="col-sub">Goal</th>
+                  <!-- Practice 4 -->
+                  <th class="col-sub">Split</th><th class="col-sub">Goal</th>
+                  <!-- Race 1 -->
+                  <th class="col-sub" id="thR1Split">R1-Sec</th><th class="col-sub" id="thR1Goal">R1-Goal</th>
+                  <!-- Race 2 -->
+                  <th class="col-sub" id="thR2Split">R2-Sec</th><th class="col-sub" id="thR2Goal">R2-Goal</th>
+                </tr>
+              </thead>
+              <tbody id="overviewBody">
+                <tr>
+                  <td colspan="16" class="empty-cell">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/results-overview.js?v=1.0.0" defer></script>
+</body>
+</html>

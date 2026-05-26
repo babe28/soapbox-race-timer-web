@@ -1,4 +1,4 @@
-﻿let controlState = null;
+let controlState = null;
 let selectedEntry = null;
 let pollTimer = null;
 let pollRequestId = 0;
@@ -44,9 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
   restoreRunType();
   initializeControlSession();
   ensureControlLock();
+  loadLanguageSetting();
   window.addEventListener('pagehide', releaseControlLock);
   window.addEventListener('beforeunload', releaseControlLock);
 });
+
+async function loadLanguageSetting() {
+  try {
+    const res = await fetch('/api/settings', { cache: 'no-store' });
+    const data = await res.json();
+    if (window.applyControlLanguage) window.applyControlLanguage(data.language || 'en');
+  } catch (_err) {
+    // keep default language
+  }
+}
 
 function bindEvents() {
   document.getElementById('saveBtn')?.addEventListener('click', saveRun);
@@ -77,26 +88,26 @@ function bindEvents() {
   });
 
   document.getElementById('setNowBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('Select an entry first');
+    if (!selectedEntry?.id) return alert(window.controlT?.('selectEntryFirst') || 'Select an entry first');
     await postJson('/api/control/action/set-now', { entryId: selectedEntry.id });
     await loadControlState(selectedEntry.id);
   });
 
   document.getElementById('setNextBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('Select an entry first');
+    if (!selectedEntry?.id) return alert(window.controlT?.('selectEntryFirst') || 'Select an entry first');
     await postJson('/api/control/action/set-next', { entryId: selectedEntry.id });
     await loadControlState(selectedEntry.id);
   });
 
   document.getElementById('skipNextBtn')?.addEventListener('click', async () => {
     const entry = controlState?.nextEntry || selectedEntry;
-    if (!entry?.id) return alert('No entry to skip');
+    if (!entry?.id) return alert(window.controlT?.('noEntryToSkip') || 'No entry to skip');
     await postJson('/api/control/action/skip', { entryId: entry.id });
     await loadControlState();
   });
 
   document.getElementById('unskipBtn')?.addEventListener('click', async () => {
-    if (!selectedEntry?.id) return alert('Select an entry first');
+    if (!selectedEntry?.id) return alert(window.controlT?.('selectEntryFirst') || 'Select an entry first');
     await postJson('/api/control/action/unskip', { entryId: selectedEntry.id });
     await loadControlState(selectedEntry.id);
   });
@@ -391,6 +402,9 @@ function connectWs() {
   ws.addEventListener('message', (event) => {
     try {
       const message = JSON.parse(event.data);
+      if (message.type === 'settings_updated') {
+        loadLanguageSetting();
+      }
       if (message.type === 'state_update'
         || message.type === 'entry_updated'
         || message.type === 'run_updated'
@@ -401,16 +415,16 @@ function connectWs() {
       if (message.type === 'external_timer_input') {
         applyExternalTimerInput(message).catch((err) => {
           console.error(err);
-          showExternalTimerStatus('External timer input was ignored', 'error');
+          showExternalTimerStatus(window.controlT?.('externalTimerIgnored') || 'External timer input was ignored', 'error');
         });
         return;
       }
       if (message.type === 'external_timer_error') {
-        showExternalTimerStatus(message.message || 'External timer input was ignored', 'error');
+        showExternalTimerStatus(message.message || window.controlT?.('externalTimerIgnored') || 'External timer input was ignored', 'error');
         return;
       }
       if (message.type === 'sensor_triggered') {
-        showExternalTimerStatus(message.message || 'Start sensor triggered', 'success');
+        showExternalTimerStatus(message.message || window.controlT?.('startSensorTriggered') || 'Start sensor triggered', 'success');
       }
     } catch (_err) {
       // ignore invalid websocket payloads
@@ -501,7 +515,7 @@ async function applyExternalTimerInputLegacy(_message) {
 async function applyExternalTimerInput(message) {
   const targetEntry = await ensureExternalTimerTargetEntry();
   if (!targetEntry?.id) {
-    showExternalTimerStatus('External timer input arrived, but no target entry is selected.', 'warn');
+    showExternalTimerStatus(window.controlT?.('externalTimerNoTarget') || 'External timer input arrived, but no target entry is selected.', 'warn');
     return;
   }
 
@@ -591,7 +605,7 @@ function renderHistory(runs) {
   tbody.innerHTML = '';
 
   if (!runs.length) {
-    tbody.innerHTML = '<tr><td colspan="5">No runs yet</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5">${window.controlT?.('noRunsYet') || 'No runs yet'}</td></tr>`;
     return;
   }
 
@@ -603,7 +617,7 @@ function renderHistory(runs) {
       <td>${escapeHtml(fmt(run.split_ms))}</td>
       <td>${escapeHtml(fmt(run.goal_ms))}</td>
       <td>${escapeHtml(String(run.status || '-').toUpperCase())}</td>
-      <td><button type="button" class="table-btn danger" data-action="delete-run">Delete</button></td>
+      <td><button type="button" class="table-btn danger" data-action="delete-run">${window.controlT?.('deleteRun') || 'Delete'}</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -618,19 +632,19 @@ async function onHistoryClick(event) {
 
   const runId = Number(tr.dataset.runId);
   if (!runId) return;
-  if (!window.confirm('Delete this run?')) return;
+  if (!window.confirm(window.controlT?.('deleteRunConfirm') || 'Delete this run?')) return;
 
   try {
     const res = await fetch(`/api/runs/${runId}`, { method: 'DELETE' });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(json.error || 'Failed to delete run');
+      alert(json.error || window.controlT?.('failedDeleteRun') || 'Failed to delete run');
       return;
     }
     await loadControlState(selectedEntry?.id ?? null);
   } catch (err) {
     console.error(err);
-    alert('Failed to delete run');
+    alert(window.controlT?.('failedDeleteRun') || 'Failed to delete run');
   }
 }
 
@@ -648,7 +662,7 @@ function renderQueueList() {
   });
 
   if (!rows.length) {
-    list.innerHTML = '<li><span>-</span><strong>No match</strong></li>';
+    list.innerHTML = `<li><span>-</span><strong>${window.controlT?.('noMatch') || 'No match'}</strong></li>`;
     return;
   }
 
@@ -674,7 +688,7 @@ async function saveRun(options = {}) {
   }
 
   if (!selectedEntry?.id) {
-    alert('Select an entry first');
+    alert(window.controlT?.('selectEntryFirst') || 'Select an entry first');
     return false;
   }
 
@@ -692,7 +706,7 @@ async function saveRun(options = {}) {
   }
 
   if (splitResult.ms !== null && goalResult.ms !== null && splitResult.ms > goalResult.ms) {
-    alert('Split Time must be less than or equal to Goal Time');
+    alert(window.controlT?.('splitGtGoal') || 'Split Time must be less than or equal to Goal Time');
     return false;
   }
 
@@ -717,7 +731,7 @@ async function saveRun(options = {}) {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    alert(json.error || 'Failed to save run');
+    alert(json.error || window.controlT?.('failedSaveRun') || 'Failed to save run');
     return false;
   }
 
@@ -774,7 +788,10 @@ function normalizeEmpty(value) {
 }
 
 function labelRunType(value) {
-  return ({ practice: 'Practice', race1: 'Race1', race2: 'Race2', rerun: 'Rerun' })[value] || value || '-';
+  const labels = window._controlLang === 'ja'
+    ? { practice: '練習', race1: '1本目', race2: '2本目', rerun: '再走' }
+    : { practice: 'Practice', race1: 'Race1', race2: 'Race2', rerun: 'Rerun' };
+  return labels[value] || value || '-';
 }
 
 function setRunType(value) {

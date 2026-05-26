@@ -368,3 +368,25 @@
     align-items: flex-start;
   }
 }
+
+/* ── Database management ─────────────────────────────── */
+.db-item {
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.db-active {
+  border-color: rgba(88, 214, 141, 0.45) !important;
+  background: rgba(88, 214, 141, 0.08) !important;
+}
+
+.db-switch-btn {
+  background: rgba(92, 169, 255, 0.16);
+  border: 1px solid rgba(92, 169, 255, 0.4);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.db-switch-btn:hover {
+  background: rgba(92, 169, 255, 0.3);
+}

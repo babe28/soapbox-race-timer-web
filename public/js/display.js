@@ -137,10 +137,10 @@
     document.getElementById('thCar').textContent = labels.car || 'Car';
     document.getElementById('thMemo').textContent = data.settings?.memoTitle || labels.memo || 'Memo';
     document.getElementById('thPractice').textContent = labels.practice || 'Practice';
-    document.getElementById('thPractice1').textContent = 'P1';
-    document.getElementById('thPractice2').textContent = 'P2';
-    document.getElementById('thPractice3').textContent = 'P3';
-    document.getElementById('thPractice4').textContent = 'P4';
+    document.getElementById('thPractice1').textContent = labels.p1 || 'P1';
+    document.getElementById('thPractice2').textContent = labels.p2 || 'P2';
+    document.getElementById('thPractice3').textContent = labels.p3 || 'P3';
+    document.getElementById('thPractice4').textContent = labels.p4 || 'P4';
     document.getElementById('thR1Split').textContent = labels.r1Split || 'R1-Sec';
     document.getElementById('thR1Goal').textContent = labels.r1Goal || 'R1-Goal';
     document.getElementById('thR2Split').textContent = labels.r2Split || 'R2-Sec';
@@ -172,7 +172,9 @@
 
     renderConnection(localConnectionOk && !!data.connection?.connected);
 
-    const rowsPerPage = Number(data.settings?.rowsPerPage || 20);
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPortrait = urlParams.get('layout') === 'portrait';
+    const rowsPerPage = isPortrait ? 18 : Number(data.settings?.rowsPerPage || 20);
     body.classList.toggle('mode-15-slide', rowsPerPage === 15);
     body.classList.toggle('mode-30', rowsPerPage === 30);
     body.classList.toggle('mode-35', rowsPerPage === 35);
@@ -317,11 +319,15 @@
     setCell(tr, 'kana', row.kana || '');
     setCell(tr, 'carNo', row.carNo || '');
     setCell(tr, 'memo', row.memo || '');
-    setCell(tr, 'practice', row.practice || '--.---', enteredClass(row.practiceUpdatedAt));
+    const practiceBestGoal = row.practice?.goal || '--.---';
+    const practiceBestText = row.practice?.split ? `${row.practice.split}\n${practiceBestGoal}` : practiceBestGoal;
+    setCell(tr, 'practice', practiceBestText, enteredClass(row.practiceUpdatedAt));
     const practiceRuns = Array.isArray(row.practiceRuns) ? row.practiceRuns : [];
     for (let index = 0; index < 4; index += 1) {
       const practiceRun = practiceRuns[index] || null;
-      setCell(tr, `practice${index + 1}`, practiceRun?.goal || '--.---', enteredClass(practiceRun?.updatedAt));
+      const pGoal = practiceRun?.goal || '--.---';
+      const pText = practiceRun?.split ? `${practiceRun.split}\n${pGoal}` : pGoal;
+      setCell(tr, `practice${index + 1}`, pText, enteredClass(practiceRun?.updatedAt));
     }
     setCell(tr, 'r1split', row.r1?.split || '--.---', enteredClass(row.r1?.updatedAt));
     setCell(tr, 'r1goal', row.r1?.goal || '--.---', `${enteredClass(row.r1?.updatedAt)} ${row.r1?.faster ? 'time-faster' : ''}`.trim());
@@ -343,7 +349,13 @@
       return;
     }
 
-    td.textContent = value;
+    if (name.startsWith('practice') && value.includes('\n')) {
+      const parts = value.split('\n');
+      td.innerHTML = `<span class="split-time">${parts[0]}</span><span class="goal-time">${parts[1]}</span>`;
+    } else {
+      td.textContent = value;
+    }
+    
     td.classList.toggle('time-entered', extraClass.includes('time-entered'));
     td.classList.toggle('time-best', extraClass.includes('time-best'));
     td.classList.toggle('time-faster', extraClass.includes('time-faster'));

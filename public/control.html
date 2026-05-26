@@ -12,8 +12,8 @@
   <div class="control-shell" id="controlApp">
     <div class="control-lock-overlay" id="controlLockOverlay" hidden>
       <div class="control-lock-card">
-        <h2 id="controlLockTitle">Race Control はすでに開かれています</h2>
-        <p id="controlLockMessage">別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。</p>
+        <h2 id="controlLockTitle" data-i18n="lockTitle">Race Control はすでに開かれています</h2>
+        <p id="controlLockMessage" data-i18n="lockMessage">別のブラウザで Race Control が使用中です。そちらを閉じると、この画面は自動で有効になります。</p>
         <div class="control-lock-actions">
           <button type="button" id="controlLockRetryBtn">再試行</button>
           <button type="button" class="danger-button" id="controlLockForceBtn">強制解放</button>
@@ -31,6 +31,7 @@
         <a class="ghost-button" href="/driver-overlay" target="_blank" rel="noopener noreferrer">Driver Overlay</a>
         <a class="ghost-button" href="/fastest" target="_blank" rel="noopener noreferrer">Fastest Only</a>
         <a class="ghost-button" href="/entries.html">Entries / Edit</a>
+        <a class="ghost-button" href="/results-overview.html">Results Overview</a>
         <a class="ghost-button" href="/settings.html">Settings</a>
       </div>
     </header>
@@ -38,15 +39,15 @@
     <main class="control-grid">
       <section class="panel panel-left">
         <div class="panel-section">
-          <div class="section-title">Heat / Status</div>
+          <div class="section-title" data-i18n="sectionHeatStatus">Heat / Status</div>
           <div class="info-grid two-col">
-            <div class="info-item"><span>Event</span><strong id="ctrlEventName">Soap Box Derby</strong></div>
-            <div class="info-item"><span>Heat</span><strong id="ctrlHeatNo">Heat -</strong></div>
-            <div class="info-item"><span>Status</span><strong id="ctrlStatus">WAITING</strong></div>
-            <div class="info-item starter-ready-item"><span>Starter</span><strong id="ctrlStarterReady" class="starter-ready-badge is-waiting">WAITING</strong></div>
-            <div class="info-item"><span>Overall Best</span><strong id="ctrlOverallBest">--.---</strong></div>
-            <div class="info-item"><span>Last Update</span><strong id="ctrlLastUpdate">-</strong></div>
-            <div class="info-item"><span>Backup</span><strong>Auto / 5 min</strong></div>
+            <div class="info-item"><span data-i18n="labelEvent">Event</span><strong id="ctrlEventName">Soap Box Derby</strong></div>
+            <div class="info-item"><span data-i18n="labelHeat">Heat</span><strong id="ctrlHeatNo">Heat -</strong></div>
+            <div class="info-item"><span data-i18n="labelStatus">Status</span><strong id="ctrlStatus">WAITING</strong></div>
+            <div class="info-item starter-ready-item"><span data-i18n="labelStarter">Starter</span><strong id="ctrlStarterReady" class="starter-ready-badge is-waiting">WAITING</strong></div>
+            <div class="info-item"><span data-i18n="labelOverallBest">Overall Best</span><strong id="ctrlOverallBest">--.---</strong></div>
+            <div class="info-item"><span data-i18n="labelLastUpdate">Last Update</span><strong id="ctrlLastUpdate">-</strong></div>
+            <div class="info-item"><span data-i18n="labelBackup">Backup</span><strong data-i18n="backupAuto">Auto / 5 min</strong></div>
           </div>
           <div class="button-row status-row">
             <button data-status="waiting">Waiting</button>
@@ -57,13 +58,13 @@
         </div>
 
         <div class="panel-section">
-          <div class="section-title">Queue Control</div>
+          <div class="section-title" data-i18n="sectionQueueControl">Queue Control</div>
           <div class="queue-card">
-            <span class="queue-label">Now Running</span>
+            <span class="queue-label" data-i18n="nowRunning">Now Running</span>
             <strong id="nowCard">-</strong>
           </div>
           <div class="queue-card">
-            <span class="queue-label">Next</span>
+            <span class="queue-label" data-i18n="next">Next</span>
             <strong id="nextCard">-</strong>
           </div>
           <div class="button-grid">
@@ -77,23 +78,23 @@
         </div>
 
         <div class="panel-section">
-          <div class="section-title">Quick Summary</div>
+          <div class="section-title" data-i18n="sectionQuickSummary">Quick Summary</div>
           <div class="info-grid two-col compact">
-            <div class="info-item"><span>Total</span><strong id="sumTotal">0</strong></div>
-            <div class="info-item"><span>Ranked</span><strong id="sumRanked">0</strong></div>
-            <div class="info-item"><span>Unrun</span><strong id="sumUnrun">0</strong></div>
-            <div class="info-item"><span>Last Entry</span><strong id="sumLast">-</strong></div>
+            <div class="info-item"><span data-i18n="labelTotal">Total</span><strong id="sumTotal">0</strong></div>
+            <div class="info-item"><span data-i18n="labelRanked">Ranked</span><strong id="sumRanked">0</strong></div>
+            <div class="info-item"><span data-i18n="labelUnrun">Unrun</span><strong id="sumUnrun">0</strong></div>
+            <div class="info-item"><span data-i18n="labelLastEntry">Last Entry</span><strong id="sumLast">-</strong></div>
           </div>
         </div>
       </section>
 
       <section class="panel panel-center">
         <div class="panel-section">
-          <div class="section-title">Selected Entry</div>
+          <div class="section-title" data-i18n="sectionSelectedEntry">Selected Entry</div>
           <div class="selected-sub" id="anonymousModeBadge" hidden>匿名走行モード: エントリー未選択でも保存時に自動作成します</div>
           <div class="search-row">
             <input type="text" id="entrySearch" placeholder="Search by bib no or name" />
-            <button type="button">Find</button>
+            <button type="button" data-i18n="find">Find</button>
           </div>
           <div class="selected-entry-card">
             <div class="selected-head">
@@ -109,7 +110,7 @@
         </div>
 
         <div class="panel-section">
-          <div class="section-title">Run Type</div>
+          <div class="section-title" data-i18n="sectionRunType">Run Type</div>
           <input type="hidden" id="runType" value="race1" />
           <div class="run-type-buttons">
             <button type="button" data-run-type="practice">Practice (練習)</button>
@@ -118,7 +119,7 @@
             <button type="button" data-run-type="rerun">Rerun (再走)</button>
           </div>
           <div class="search-row rerun-row">
-            <label for="replaceTarget">Replace Target</label>
+            <label for="replaceTarget" data-i18n="replaceTarget">Replace Target</label>
             <select id="replaceTarget">
               <option value="">--</option>
               <option value="race1">Race1</option>
@@ -128,19 +129,19 @@
         </div>
 
         <div class="panel-section">
-          <div class="section-title">Time Input</div>
+          <div class="section-title" data-i18n="sectionTimeInput">Time Input</div>
           <div id="externalTimerStatus" class="external-timer-status" hidden>External timer ready</div>
           <div class="form-grid">
             <label>
-              <span>Split Time</span>
+              <span data-i18n="splitTime">Split Time</span>
               <input type="text" id="splitTime" class="time-input" placeholder="10.123" />
             </label>
             <label>
-              <span>Goal Time</span>
+              <span data-i18n="goalTime">Goal Time</span>
               <input type="text" id="goalTime" class="time-input" placeholder="27.523" />
             </label>
             <label>
-              <span>Status</span>
+              <span data-i18n="statusLabel">Status</span>
               <select id="runStatus">
                 <option value="finished">Finished (完走)</option>
                 <option value="dq">DQ (失格)</option>
@@ -150,11 +151,11 @@
               </select>
             </label>
             <label>
-              <span>Car No at Run</span>
+              <span data-i18n="carNoAtRun">Car No at Run</span>
               <input type="text" id="carNoAtRun" placeholder="A12" />
             </label>
             <label class="full-width">
-              <span>Note</span>
+              <span data-i18n="note">Note</span>
               <input type="text" id="runNote" placeholder="Optional note" />
             </label>
           </div>
@@ -171,15 +172,15 @@
 
       <section class="panel panel-right">
         <div class="panel-section">
-          <div class="section-title">Selected Entry History</div>
+          <div class="section-title" data-i18n="sectionHistory">Selected Entry History</div>
           <table class="mini-table">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Split</th>
-                <th>Goal</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th data-i18n="historyType">Type</th>
+                <th data-i18n="historySplit">Split</th>
+                <th data-i18n="historyGoal">Goal</th>
+                <th data-i18n="historyStatus">Status</th>
+                <th data-i18n="historyAction">Action</th>
               </tr>
             </thead>
             <tbody id="historyBody">
@@ -189,7 +190,7 @@
         </div>
 
         <div class="panel-section">
-          <div class="section-title">Queue Candidates</div>
+          <div class="section-title" data-i18n="sectionQueueCandidates">Queue Candidates</div>
           <ul class="queue-list queue-list-compact" id="queueList">
             <li><span>-</span><strong>No entries</strong></li>
           </ul>
@@ -199,6 +200,7 @@
   </div>
 
   <script src="/js/common.js"></script>
-  <script src="/js/control.js?v=1.0.2" defer></script>
+  <script src="/js/control-i18n.js"></script>
+  <script src="/js/control.js?v=1.0.3" defer></script>
 </body>
 </html>

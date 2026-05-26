@@ -48,6 +48,10 @@ function bindSettingsElements() {
   settingsEls.serverAddress = document.getElementById('settingsServerAddress');
   settingsEls.serverAddressList = document.getElementById('settingsServerAddressList');
   settingsEls.serverOrigin = document.getElementById('settingsServerOrigin');
+  settingsEls.currentDbName = document.getElementById('currentDbName');
+  settingsEls.dbList = document.getElementById('dbList');
+  settingsEls.createDbBtn = document.getElementById('createDbBtn');
+  settingsEls.reloadDbListBtn = document.getElementById('reloadDbListBtn');
 }
 
 function bindSettingsEvents() {
@@ -60,11 +64,13 @@ function bindSettingsEvents() {
   settingsEls.reloadLogsBtn?.addEventListener('click', loadAuditLogs);
   settingsEls.reloadApisBtn?.addEventListener('click', loadApiCatalog);
   settingsEls.anonymousEntryMode?.addEventListener('change', syncAnonymousModeUi);
+  settingsEls.createDbBtn?.addEventListener('click', createNewDatabase);
+  settingsEls.reloadDbListBtn?.addEventListener('click', loadDatabaseList);
 }
 
 async function loadAll() {
   renderServerAddress();
-  await Promise.all([loadSettings(), loadAuditLogs(), loadApiCatalog(), loadClients()]);
+  await Promise.all([loadSettings(), loadAuditLogs(), loadApiCatalog(), loadClients(), loadDatabaseList()]);
 }
 
 async function loadSettings() {
@@ -112,6 +118,11 @@ function applySettingsToForm(data) {
   settingsEls.showEffects.checked = Boolean(data.showEffects);
   if (settingsEls.anonymousEntryMode) settingsEls.anonymousEntryMode.checked = Boolean(data.anonymousEntryMode);
   settingsEls.memoTitle.value = data.memoTitle ?? 'メモ';
+
+  // Update current DB name display
+  if (data.currentDb && settingsEls.currentDbName) {
+    settingsEls.currentDbName.textContent = data.currentDb;
+  }
 }
 
 async function saveSettings(event) {
@@ -161,7 +172,7 @@ async function saveSettings(event) {
 }
 
 async function resetDatabase() {
-  if (!window.confirm('データベースを初期化しますか？ ヒート、エントリー、走行データが削除されます。')) {
+  if (!window.confirm('データベースを初期化しますか？\n新しいDBファイルが作成され、現在のデータは元のファイルに残ります。')) {
     return;
   }
 
@@ -173,8 +184,11 @@ async function resetDatabase() {
       return;
     }
     applySettingsToForm(data.settings || {});
-    await loadAuditLogs();
-    alert('データベースを初期化しました');
+    if (data.currentDb && settingsEls.currentDbName) {
+      settingsEls.currentDbName.textContent = data.currentDb;
+    }
+    await Promise.all([loadAuditLogs(), loadDatabaseList()]);
+    alert('新しいデータベースを作成しました: ' + (data.currentDb || ''));
   } catch (err) {
     console.error(err);
     alert('データベースの初期化に失敗しました');
@@ -367,4 +381,111 @@ function syncAnonymousModeUi() {
   if (!settingsEls.showPractice) return;
   if (anonymousMode) settingsEls.showPractice.checked = true;
   settingsEls.showPractice.disabled = anonymousMode;
+}
+
+/* ── Database Management ─────────────────────────────── */
+
+async function loadDatabaseList() {
+  if (!settingsEls.dbList) return;
+  try {
+    const res = await fetch('/api/settings/databases', { cache: 'no-store' });
+    const data = await res.json();
+    renderDatabaseList(data.databases || [], data.current || '');
+    if (data.current && settingsEls.currentDbName) {
+      settingsEls.currentDbName.textContent = data.current;
+    }
+  } catch (err) {
+    console.error(err);
+    settingsEls.dbList.innerHTML = '<div class="log-row"><span>DB一覧の読み込みに失敗しました</span></div>';
+  }
+}
+
+function renderDatabaseList(databases, current) {
+  if (!settingsEls.dbList) return;
+  if (!databases.length) {
+    settingsEls.dbList.innerHTML = '<div class="log-row"><span>データベースファイルがありません</span></div>';
+    return;
+  }
+
+  settingsEls.dbList.innerHTML = databases.map((db) => {
+    const isActive = db.name === current;
+    const sizeKb = Math.round((db.size || 0) / 1024);
+    const modified = db.modifiedAt ? new Date(db.modifiedAt).toLocaleString('ja-JP') : '-';
+    return `
+      <div class="log-row db-item${isActive ? ' db-active' : ''}" data-db-name="${escapeHtml(db.name)}">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <strong style="font-size:14px;">${isActive ? '● ' : ''}${escapeHtml(db.name)}</strong>
+          ${isActive
+            ? '<span style="font-size:12px; color:#58d68d; font-weight:600;">使用中</span>'
+            : `<button type="button" class="db-switch-btn" style="padding:4px 10px; font-size:12px; border-radius:6px;">切り替え</button>`
+          }
+        </div>
+        <span style="font-size:11px;">${sizeKb} KB / 更新: ${modified}</span>
+      </div>
+    `;
+  }).join('');
+
+  // Bind switch buttons
+  settingsEls.dbList.querySelectorAll('.db-switch-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-db-name]');
+      if (row) switchDatabase(row.dataset.dbName);
+    });
+  });
+}
+
+async function switchDatabase(filename) {
+  if (!window.confirm(`データベースを「${filename}」に切り替えますか？`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/settings/switch-db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'データベースの切り替えに失敗しました');
+      return;
+    }
+    if (data.settings) applySettingsToForm(data.settings);
+    if (data.current && settingsEls.currentDbName) {
+      settingsEls.currentDbName.textContent = data.current;
+    }
+    await Promise.all([loadDatabaseList(), loadAuditLogs()]);
+    alert('データベースを切り替えました: ' + (data.current || filename));
+  } catch (err) {
+    console.error(err);
+    alert('データベースの切り替えに失敗しました');
+  }
+}
+
+async function createNewDatabase() {
+  if (!window.confirm('新しいデータベースを作成して切り替えますか？')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/settings/create-db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || '新しいデータベースの作成に失敗しました');
+      return;
+    }
+    if (data.settings) applySettingsToForm(data.settings);
+    if (data.current && settingsEls.currentDbName) {
+      settingsEls.currentDbName.textContent = data.current;
+    }
+    await Promise.all([loadDatabaseList(), loadAuditLogs()]);
+    alert('新しいデータベースを作成しました: ' + (data.current || ''));
+  } catch (err) {
+    console.error(err);
+    alert('新しいデータベースの作成に失敗しました');
+  }
 }
